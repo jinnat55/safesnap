@@ -171,3 +171,6 @@ dialog h2 { font-family: var(--display); margin: 0 0 8px; font-size: 1.5rem; }
 .stat { background: #0f1d2b; border-radius: 14px; padding: 14px 16px; }
 .stat b { display: block; font: 700 1.9rem var(--display); color: var(--safelight); }
 .stat span { color: var(--muted); font-size: 0.92rem; }
+
+/* the real file input is visually hidden, so show its focus on the visible label */
+#file:focus-visible + .btn { outline: 3px solid var(--safelight); outline-offset: 3px; }
