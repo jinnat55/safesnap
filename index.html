@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SafeSnap — check a photo before you share it</title>
+  <meta name="description" content="A private checkpoint for photos. Gemini Nano looks for private items on your device first, and tells you honestly what it can and cannot see." />
+  <meta name="color-scheme" content="dark" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f1a24'/%3E%3Cpath d='M9 13V9h4M23 13V9h-4M9 19v4h4M23 19v4h-4' stroke='%23ffb84d' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" />
+</head>
+<body>
+  <a class="skip" href="#result">Skip to result</a>
+  <div id="announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M7 12V7h5M25 12V7h-5M7 20v5h5M25 20v5h-5" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>
+      <span>SafeSnap</span>
+    </div>
+    <ol class="path" aria-label="How your photo is handled">
+      <li><strong>Your device</strong> checks first</li>
+      <li><strong>You</strong> decide what happens next</li>
+      <li><strong>The cloud</strong> only if you say yes, per photo</li>
+    </ol>
+  </header>
+
+  <main class="layout">
+    <section class="stage-wrap" aria-labelledby="stage-title">
+      <h1 id="stage-title" class="title">Check a photo before you share it.</h1>
+      <p class="lede">SafeSnap looks for private items such as cards, papers, screens and faces, and says where it thinks they are. It never reads the text on them.</p>
+
+      <div class="stage" id="stage" data-state="idle">
+        <div class="stage-inner" id="stage-inner">
+          <div class="frame" id="frame">
+            <img id="preview" alt="" hidden />
+            <div class="empty" id="empty">
+              <p class="empty-title">Choose a photo to check</p>
+              <p class="empty-hint">JPEG, PNG, or most phone photos. It stays in this tab.</p>
+            </div>
+            <div class="grid" id="grid" aria-hidden="true"></div>
+            <div class="beam" id="beam" aria-hidden="true"></div>
+            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <input type="file" id="file" accept="image/*" class="sr-only" />
+        <label for="file" class="btn btn-primary" id="choose">Choose photo</label>
+        <button type="button" class="btn" id="sample">Try a sample photo</button>
+        <button type="button" class="btn btn-scan" id="scan" hidden>Check this photo</button>
+      </div>
+    </section>
+
+    <section class="panel" id="result" tabindex="-1" aria-labelledby="result-title">
+      <div class="engine" id="engine" data-source="none">
+        <span class="engine-dot" aria-hidden="true"></span>
+        <span id="engine-text">No photo checked yet</span>
+      </div>
+      <h2 id="result-title" class="result-title">Waiting for a photo</h2>
+      <div id="result-body" class="result-body">
+        <p class="muted">When you check a photo, the answer appears here. SafeSnap will never tell you a photo is safe. It can only say what it found, and what it might have missed.</p>
+      </div>
+      <div id="actions" class="actions" hidden></div>
+      <div id="description" class="description" hidden></div>
+    </section>
+  </main>
+
+  <dialog id="consent" aria-labelledby="consent-title">
+    <form method="dialog">
+      <h2 id="consent-title">Send this photo to the cloud?</h2>
+      <p id="consent-text"></p>
+      <ul class="consent-list">
+        <li>Only this photo is sent, through Firebase AI Logic to a Google Gemini model.</li>
+        <li>SafeSnap keeps nothing. Google’s own terms apply to what it receives.</li>
+        <li>You will be asked again for every photo.</li>
+      </ul>
+      <div class="consent-actions">
+        <button class="btn" value="cancel" id="consent-cancel">Keep it on this device</button>
+        <button class="btn btn-primary" value="ok" id="consent-ok">Send this photo</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="foot">
+    <p>Best-effort check by a small AI model. It can miss things. Open source, MIT license. Built for #BuildHybridAI with Firebase AI Logic.</p>
+  </footer>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
