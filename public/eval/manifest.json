@@ -1,0 +1,415 @@
+{
+  "generated": "synthetic, fake data only",
+  "images": [
+    {
+      "id": "scene-01",
+      "file": "images/scene-01.png",
+      "truth": []
+    },
+    {
+      "id": "scene-02",
+      "file": "images/scene-02.png",
+      "truth": []
+    },
+    {
+      "id": "scene-03",
+      "file": "images/scene-03.png",
+      "truth": []
+    },
+    {
+      "id": "scene-04",
+      "file": "images/scene-04.png",
+      "truth": []
+    },
+    {
+      "id": "scene-05",
+      "file": "images/scene-05.png",
+      "truth": []
+    },
+    {
+      "id": "scene-06",
+      "file": "images/scene-06.png",
+      "truth": []
+    },
+    {
+      "id": "scene-07",
+      "file": "images/scene-07.png",
+      "truth": []
+    },
+    {
+      "id": "scene-08",
+      "file": "images/scene-08.png",
+      "truth": []
+    },
+    {
+      "id": "scene-09",
+      "file": "images/scene-09.png",
+      "truth": []
+    },
+    {
+      "id": "scene-10",
+      "file": "images/scene-10.png",
+      "truth": []
+    },
+    {
+      "id": "scene-11",
+      "file": "images/scene-11.png",
+      "truth": [
+        {
+          "category": "card_like_object",
+          "cell": "center",
+          "size": "small"
+        }
+      ]
+    },
+    {
+      "id": "scene-12",
+      "file": "images/scene-12.png",
+      "truth": [
+        {
+          "category": "document",
+          "cell": "bottom-left",
+          "size": "medium"
+        }
+      ]
+    },
+    {
+      "id": "scene-13",
+      "file": "images/scene-13.png",
+      "truth": [
+        {
+          "category": "screen",
+          "cell": "middle-left",
+          "size": "large"
+        }
+      ]
+    },
+    {
+      "id": "scene-14",
+      "file": "images/scene-14.png",
+      "truth": [
+        {
+          "category": "address_like_text",
+          "cell": "bottom-right",
+          "size": "small"
+        }
+      ]
+    },
+    {
+      "id": "scene-15",
+      "file": "images/scene-15.png",
+      "truth": [
+        {
+          "category": "face",
+          "cell": "top-center",
+          "size": "medium"
+        },
+        {
+          "category": "document",
+          "cell": "bottom-left",
+          "size": "medium"
+        }
+      ]
+    },
+    {
+      "id": "scene-16",
+      "file": "images/scene-16.png",
+      "truth": [
+        {
+          "category": "card_like_object",
+          "cell": "top-right",
+          "size": "large"
+        }
+      ]
+    },
+    {
+      "id": "scene-17",
+      "file": "images/scene-17.png",
+      "truth": [
+        {
+          "category": "document",
+          "cell": "bottom-right",
+          "size": "small"
+        }
+      ]
+    },
+    {
+      "id": "scene-18",
+      "file": "images/scene-18.png",
+      "truth": [
+        {
+          "category": "screen",
+          "cell": "bottom-left",
+          "size": "medium"
+        }
+      ]
+    },
+    {
+      "id": "scene-19",
+      "file": "images/scene-19.png",
+      "truth": [
+        {
+          "category": "address_like_text",
+          "cell": "top-right",
+          "size": "large"
+        }
+      ]
+    },
+    {
+      "id": "scene-20",
+      "file": "images/scene-20.png",
+      "truth": [
+        {
+          "category": "face",
+          "cell": "middle-left",
+          "size": "small"
+        },
+        {
+          "category": "document",
+          "cell": "top-right",
+          "size": "medium"
+        }
+      ]
+    },
+    {
+      "id": "scene-21",
+      "file": "images/scene-21.png",
+      "truth": [
+        {
+          "category": "card_like_object",
+          "cell": "middle-right",
+          "size": "medium"
+        }
+      ]
+    },
+    {
+      "id": "scene-22",
+      "file": "images/scene-22.png",
+      "truth": [
+        {
+          "category": "document",
+          "cell": "middle-right",
+          "size": "large"
+        }
+      ]
+    },
+    {
+      "id": "scene-23",
+      "file": "images/scene-23.png",
+      "truth": [
+        {
+          "category": "screen",
+          "cell": "center",
+          "size": "small"
+        }
+      ]
+    },
+    {
+      "id": "scene-24",
+      "file": "images/scene-24.png",
+      "truth": [
+        {
+          "category": "address_like_text",
+          "cell": "bottom-left",
+          "size": "medium"
+        }
+      ]
+    },
+    {
+      "id": "scene-25",
+      "file": "images/scene-25.png",
+      "truth": [
+        {
+          "category": "face",
+          "cell": "bottom-left",
+          "size": "large"
+        },
+        {
+          "category": "document",
+          "cell": "bottom-right",
+          "size": "medium"
+        }
+      ]
+    },
+    {
+      "id": "scene-26",
+      "file": "images/scene-26.png",
+      "truth": [
+        {
+          "category": "card_like_object",
+          "cell": "middle-left",
+          "size": "small"
+        }
+      ]
+    },
+    {
+      "id": "scene-27",
+      "file": "images/scene-27.png",
+      "truth": [
+        {
+          "category": "document",
+          "cell": "bottom-center",
+          "size": "medium"
+        }
+      ]
+    },
+    {
+      "id": "scene-28",
+      "file": "images/scene-28.png",
+      "truth": [
+        {
+          "category": "screen",
+          "cell": "top-left",
+          "size": "large"
+        }
+      ]
+    },
+    {
+      "id": "scene-29",
+      "file": "images/scene-29.png",
+      "truth": [
+        {
+          "category": "address_like_text",
+          "cell": "middle-left",
+          "size": "small"
+        }
+      ]
+    },
+    {
+      "id": "scene-30",
+      "file": "images/scene-30.png",
+      "truth": [
+        {
+          "category": "face",
+          "cell": "bottom-left",
+          "size": "medium"
+        },
+        {
+          "category": "document",
+          "cell": "middle-left",
+          "size": "medium"
+        }
+      ]
+    },
+    {
+      "id": "scene-31",
+      "file": "images/scene-31.png",
+      "truth": [
+        {
+          "category": "card_like_object",
+          "cell": "middle-left",
+          "size": "large"
+        }
+      ]
+    },
+    {
+      "id": "scene-32",
+      "file": "images/scene-32.png",
+      "truth": [
+        {
+          "category": "document",
+          "cell": "top-right",
+          "size": "small"
+        }
+      ]
+    },
+    {
+      "id": "scene-33",
+      "file": "images/scene-33.png",
+      "truth": [
+        {
+          "category": "screen",
+          "cell": "bottom-left",
+          "size": "medium"
+        }
+      ]
+    },
+    {
+      "id": "scene-34",
+      "file": "images/scene-34.png",
+      "truth": [
+        {
+          "category": "address_like_text",
+          "cell": "bottom-left",
+          "size": "large"
+        }
+      ]
+    },
+    {
+      "id": "scene-35",
+      "file": "images/scene-35.png",
+      "truth": [
+        {
+          "category": "face",
+          "cell": "top-right",
+          "size": "small"
+        },
+        {
+          "category": "document",
+          "cell": "top-center",
+          "size": "small"
+        }
+      ]
+    },
+    {
+      "id": "scene-36",
+      "file": "images/scene-36.png",
+      "truth": [
+        {
+          "category": "card_like_object",
+          "cell": "middle-right",
+          "size": "medium"
+        }
+      ]
+    },
+    {
+      "id": "scene-37",
+      "file": "images/scene-37.png",
+      "truth": [
+        {
+          "category": "document",
+          "cell": "top-right",
+          "size": "large"
+        }
+      ]
+    },
+    {
+      "id": "scene-38",
+      "file": "images/scene-38.png",
+      "truth": [
+        {
+          "category": "screen",
+          "cell": "middle-left",
+          "size": "small"
+        }
+      ]
+    },
+    {
+      "id": "scene-39",
+      "file": "images/scene-39.png",
+      "truth": [
+        {
+          "category": "address_like_text",
+          "cell": "top-right",
+          "size": "medium"
+        }
+      ]
+    },
+    {
+      "id": "scene-40",
+      "file": "images/scene-40.png",
+      "truth": [
+        {
+          "category": "face",
+          "cell": "bottom-left",
+          "size": "large"
+        },
+        {
+          "category": "document",
+          "cell": "center",
+          "size": "small"
+        }
+      ]
+    }
+  ]
+}

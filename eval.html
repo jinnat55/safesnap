@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SafeSnap evaluation runner</title>
+  <meta name="robots" content="noindex" />
+</head>
+<body class="eval">
+  <main class="eval-main">
+    <h1 class="eval-title">Evaluation runner</h1>
+    <p class="muted">Runs the 40 synthetic, fake-data scenes through SafeSnap and measures what it finds and misses. Drawn scenes are a weak proxy for real photos, so report them as such.</p>
+    <div class="controls">
+      <button class="btn btn-primary" id="run-device" type="button">Run on this device (Gemini Nano)</button>
+      <button class="btn" id="run-cloud" type="button">Run in the cloud (sends 40 synthetic images)</button>
+      <button class="btn" id="download" type="button" hidden>Download results.json</button>
+    </div>
+    <p id="eval-status" role="status" class="muted">Ready.</p>
+    <div id="eval-summary"></div>
+    <div id="eval-table"></div>
+  </main>
+  <script type="module" src="/src/eval/runner.ts"></script>
+</body>
+</html>

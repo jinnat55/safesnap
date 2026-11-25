@@ -4,6 +4,7 @@ import { runCloudScan, runDeviceScan } from './scanner';
 import { describeInCloud, describeOnDevice } from './describe/describe';
 import { DeviceUnavailableError, type ScanOutcome } from './types';
 import { announce } from './ui/announcer';
+import { renderMeasured } from './ui/measured';
 import { actionButton, buildGrid, el, litCells, renderReport } from './ui/render';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -268,3 +269,5 @@ if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     stageInner.style.setProperty('--rx', '0deg');
   });
 }
+
+void renderMeasured();
