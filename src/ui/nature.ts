@@ -28,7 +28,7 @@ export function createNature(container: HTMLElement): Nature | null {
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(HORIZON, 40, 150);
+  scene.fog = new THREE.Fog(HORIZON, 70, 230);
   const disposables: Array<{ dispose(): void }> = [];
   const keep = <T extends { dispose(): void }>(x: T): T => {
     disposables.push(x);
@@ -58,9 +58,9 @@ export function createNature(container: HTMLElement): Nature | null {
         map: keep(
           canvasTexture(256, 256, (g) => {
             const r = g.createRadialGradient(128, 128, 4, 128, 128, 128);
-            r.addColorStop(0, 'rgba(255,252,235,1)');
-            r.addColorStop(0.16, 'rgba(255,238,185,0.75)');
-            r.addColorStop(0.5, 'rgba(255,214,150,0.2)');
+            r.addColorStop(0, 'rgba(255,252,235,0.95)');
+            r.addColorStop(0.12, 'rgba(255,238,185,0.5)');
+            r.addColorStop(0.5, 'rgba(255,214,150,0.08)');
             r.addColorStop(1, 'rgba(255,214,150,0)');
             g.fillStyle = r;
             g.fillRect(0, 0, 256, 256);
@@ -74,7 +74,7 @@ export function createNature(container: HTMLElement): Nature | null {
     ),
   );
   glow.position.copy(SUN_DIR).multiplyScalar(150);
-  glow.scale.setScalar(120);
+  glow.scale.setScalar(90);
   scene.add(glow);
 
   // Terrain.
@@ -92,24 +92,21 @@ export function createNature(container: HTMLElement): Nature | null {
   const colors = new Float32Array(pos.count * 3);
   const c = new THREE.Color();
   const pal = {
-    sand: new THREE.Color(0xd2c498),
-    meadow: new THREE.Color(0x8cbc5a),
-    forest: new THREE.Color(0x3a7a44),
-    deep: new THREE.Color(0x285a38),
-    rock: new THREE.Color(0x857f76),
-    snow: new THREE.Color(0xf6f9fc),
+    sand: new THREE.Color(0xf0d9a0),
+    meadow: new THREE.Color(0x7fd13b),
+    forest: new THREE.Color(0x2fa84f),
+    deep: new THREE.Color(0x1b7a3c),
+    rock: new THREE.Color(0x9a7b52),
   };
   for (let i = 0; i < pos.count; i++) {
     const h = pos.getY(i);
     const slope = 1 - nrm.getY(i);
     const n = fbm(pos.getX(i) * 0.3, pos.getZ(i) * 0.3, 3);
     c.copy(pal.sand);
-    c.lerp(pal.meadow, smooth(0.1, 0.9, h + n * 0.6));
-    c.lerp(pal.forest, smooth(1.8, 4.5, h + n * 1.4));
-    c.lerp(pal.deep, smooth(3.2, 7, h) * 0.6);
-    c.lerp(pal.rock, smooth(6.5, 11, h + n * 2) * 0.9);
-    c.lerp(pal.rock, smooth(0.16, 0.34, slope + n * 0.06));
-    c.lerp(pal.snow, smooth(13, 18, h + n * 3) * (1 - smooth(0.22, 0.5, slope)));
+    c.lerp(pal.meadow, smooth(0.05, 0.7, h + n * 0.6));
+    c.lerp(pal.forest, smooth(1.6, 5, h + n * 1.6));
+    c.lerp(pal.deep, smooth(5, 14, h + n * 2) * 0.85);
+    c.lerp(pal.rock, smooth(0.2, 0.42, slope + n * 0.07) * 0.55);
     colors[i * 3] = c.r;
     colors[i * 3 + 1] = c.g;
     colors[i * 3 + 2] = c.b;
@@ -145,7 +142,7 @@ export function createNature(container: HTMLElement): Nature | null {
   const wgeo = keep(new THREE.PlaneGeometry(TW, TD));
   wgeo.rotateX(-Math.PI / 2);
   wgeo.translate(0, 0, -TD / 2 + 50);
-  scene.add(new THREE.Mesh(wgeo, keep(new THREE.MeshPhysicalMaterial({ color: 0x2b86a3, roughness: 0.06, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 1.6, bumpMap: ripple, bumpScale: 0.35, transparent: true, opacity: 0.94 }))));
+  scene.add(new THREE.Mesh(wgeo, keep(new THREE.MeshPhysicalMaterial({ color: 0x16b4c8, roughness: 0.05, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 1.6, bumpMap: ripple, bumpScale: 0.35, transparent: true, opacity: 0.94 }))));
 
   // Camera path through the valley, driven by scroll.
   const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 500);
@@ -154,15 +151,16 @@ export function createNature(container: HTMLElement): Nature | null {
   const pathPts = Array.from({ length: 16 }, (_, i) => posPath.getPoint(i / 15));
   const nearPath = (x: number, z: number, r: number) => pathPts.some((v) => (v.x - x) ** 2 + (v.z - z) ** 2 < r * r);
 
-  // Pine forest.
-  const TREES = small ? 900 : 2000;
-  const coneA = keep(new THREE.ConeGeometry(0.55, 1.7, 7));
-  coneA.translate(0, 1.0, 0);
-  const coneB = keep(new THREE.ConeGeometry(0.4, 1.3, 7));
-  coneB.translate(0, 1.85, 0);
-  const treeMat = keep(new THREE.MeshStandardMaterial({ roughness: 0.9, flatShading: true }));
-  const lower = new THREE.InstancedMesh(coneA, treeMat, TREES);
-  const upper = new THREE.InstancedMesh(coneB, treeMat, TREES);
+  // Broadleaf forest: round canopies on short trunks, in many bright greens.
+  const TREES = small ? 900 : 2200;
+  const canopyGeo = keep(new THREE.IcosahedronGeometry(1, 2));
+  canopyGeo.translate(0, 2.1, 0);
+  const trunkGeo = keep(new THREE.CylinderGeometry(0.1, 0.15, 1.7, 6));
+  trunkGeo.translate(0, 0.85, 0);
+  const canopyMat = keep(new THREE.MeshStandardMaterial({ roughness: 0.85, flatShading: false }));
+  const trunkMat = keep(new THREE.MeshStandardMaterial({ color: 0x6b4a2b, roughness: 0.95 }));
+  const lower = new THREE.InstancedMesh(canopyGeo, canopyMat, TREES);
+  const upper = new THREE.InstancedMesh(trunkGeo, trunkMat, TREES);
   const m4 = new THREE.Matrix4();
   const q = new THREE.Quaternion();
   const sc = new THREE.Vector3();
@@ -174,19 +172,18 @@ export function createNature(container: HTMLElement): Nature | null {
     const x = (hash(k, 91) - 0.5) * 140;
     const z = 30 - hash(k, 17) * 110;
     const h = heightAt(x, z);
-    if (h < 0.45 || h > 7.5 || fbm(x * 0.07 + 40, z * 0.07) < 0.43 || nearPath(x, z, 11)) continue;
+    if (h < 0.4 || h > 15 || fbm(x * 0.07 + 40, z * 0.07) < 0.4 || nearPath(x, z, 20) || z > 10) continue;
     const slope = Math.abs(heightAt(x + 0.6, z) - h) + Math.abs(heightAt(x, z + 0.6) - h);
-    if (slope > 1.1) continue;
-    const s = 0.6 + hash(k, 5) * 0.9 + smooth(0, 40, -z) * 0.6;
+    if (slope > 1.6) continue;
+    const s = 0.8 + hash(k, 5) * 0.9 + smooth(0, 40, -z) * 0.7;
     tp.set(x, h - 0.05, z);
-    sc.set(s, s * (0.85 + hash(k, 8) * 0.5), s);
+    sc.set(s * (0.9 + hash(k, 8) * 0.3), s * (0.85 + hash(k, 4) * 0.4), s * (0.9 + hash(k, 6) * 0.3));
     q.setFromAxisAngle(up, hash(k, 3) * 6.28);
     m4.compose(tp, q, sc);
     lower.setMatrixAt(placed, m4);
     upper.setMatrixAt(placed, m4);
-    col.setHSL(0.31 + hash(k, 12) * 0.06, 0.42 + hash(k, 2) * 0.2, 0.2 + hash(k, 6) * 0.12);
+    col.setHSL(0.22 + hash(k, 12) * 0.13, 0.55 + hash(k, 2) * 0.25, 0.3 + hash(k, 6) * 0.14);
     lower.setColorAt(placed, col);
-    upper.setColorAt(placed, col);
     placed++;
   }
   lower.count = upper.count = placed;
@@ -203,7 +200,7 @@ export function createNature(container: HTMLElement): Nature | null {
     const x = (hash(k, 7) - 0.5) * 120;
     const z = 34 - hash(k, 9) * 80;
     const h = heightAt(x, z);
-    if (h < 0.25 || h > 2.4 || nearPath(x, z, 7)) continue;
+    if (h < 0.25 || h > 2.4 || nearPath(x, z, 12)) continue;
     if (fbm(x * 0.12 + 5, z * 0.12 + 9) < 0.45) continue;
     tp.set(x, h + 0.18, z);
     const s = 0.8 + hash(k, 11) * 1.1;

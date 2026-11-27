@@ -61,11 +61,11 @@ function ridged(x: number, y: number): number {
 const LAKE = { x: 0, z: -8, rx: 34, rz: 30 };
 /** Terrain height. Water sits at 0. Mountains rise towards -z. */
 export function heightAt(x: number, z: number): number {
-  const back = smooth(26, 95, -z);
-  const hills = fbm(x * 0.05 + 7, z * 0.05 + 3) * 3.2;
+  const back = smooth(22, 92, -z);
+  const hills = fbm(x * 0.05 + 7, z * 0.05 + 3) * 4.2;
   const r = ridged(x * 0.028 + 11, z * 0.028 - 5);
-  const peaks = Math.pow(r, 2.2) * 30 * back * (0.55 + 0.45 * smooth(0, 45, Math.abs(x) + 8));
-  const sides = smooth(22, 58, Math.abs(x)) * 9 * (0.6 + fbm(x * 0.04, z * 0.04));
+  const peaks = Math.pow(r, 1.5) * 21 * back * (0.55 + 0.45 * smooth(0, 45, Math.abs(x) + 8));
+  const sides = smooth(22, 58, Math.abs(x)) * 11 * (0.6 + fbm(x * 0.04, z * 0.04));
   const q = Math.pow((x - LAKE.x) / LAKE.rx, 2) + Math.pow((z - LAKE.z) / LAKE.rz, 2);
   const carve = Math.max(0, 1 - q);
   const shore = smooth(0, 1, 1 - q);
@@ -75,16 +75,16 @@ export function heightAt(x: number, z: number): number {
 export function skyTexture(): THREE.CanvasTexture {
   return canvasTexture(8, 512, (g) => {
     const gr = g.createLinearGradient(0, 0, 0, 512);
-    gr.addColorStop(0, '#2f84d4');
-    gr.addColorStop(0.28, '#6fb6ea');
-    gr.addColorStop(0.46, '#bfe0ef');
-    gr.addColorStop(0.5, '#e3efe9');
-    gr.addColorStop(0.56, '#d6e8dd');
-    gr.addColorStop(1, '#9ec7b0');
+    gr.addColorStop(0, '#1478e6');
+    gr.addColorStop(0.28, '#3ea4f2');
+    gr.addColorStop(0.44, '#9fd8f7');
+    gr.addColorStop(0.5, '#d6f0fb');
+    gr.addColorStop(0.56, '#bfe6d6');
+    gr.addColorStop(1, '#7fc79a');
     g.fillStyle = gr;
     g.fillRect(0, 0, 8, 512);
   });
 }
 
 export const SUN_DIR = new THREE.Vector3(0.5, 0.26, -0.82).normalize();
-export const HORIZON = 0xe3efe9;
+export const HORIZON = 0xcdebf6;
