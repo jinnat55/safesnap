@@ -19,8 +19,8 @@ function setScenery(kind: SceneryKind): void {
   document.querySelectorAll<HTMLButtonElement>('.scene-switch button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.scene === kind)));
 }
 const wanted = new URLSearchParams(location.search).get('scene');
-setScenery(wanted === 'sea' ? 'sea' : 'valley');
-document.querySelectorAll<HTMLButtonElement>('.scene-switch button').forEach((b) => b.addEventListener('click', () => setScenery(b.dataset.scene === 'sea' ? 'sea' : 'valley')));
+setScenery(wanted === 'valley' ? 'valley' : 'sea');
+document.querySelectorAll<HTMLButtonElement>('.scene-switch button').forEach((b) => b.addEventListener('click', () => setScenery(b.dataset.scene === 'valley' ? 'valley' : 'sea')));
 const stage = $('stage');
 const glHost = $('gl');
 const scene = createScene(glHost);

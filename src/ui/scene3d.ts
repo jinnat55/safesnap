@@ -21,77 +21,76 @@ const MAX_H = 3.1;
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
-/** A seaside photo shown on the print before a photo is chosen: lighthouse, rocks and gulls at golden hour. */
+/** A mountain-meadow photo shown on the print before a photo is chosen: peaks, pine forest, river and wildflowers. */
 function placeholderTexture(): THREE.CanvasTexture {
   return canvasTexture(1200, 800, (g) => {
-    const sky = g.createLinearGradient(0, 0, 0, 520);
-    sky.addColorStop(0, '#3f7fe0');
-    sky.addColorStop(0.55, '#ffb98a');
-    sky.addColorStop(1, '#ffe2a8');
+    const sky = g.createLinearGradient(0, 0, 0, 470);
+    sky.addColorStop(0, '#2f78d8');
+    sky.addColorStop(0.6, '#8cc8f0');
+    sky.addColorStop(1, '#fde7b8');
     g.fillStyle = sky;
-    g.fillRect(0, 0, 1200, 520);
-    const sun = g.createRadialGradient(300, 440, 6, 300, 440, 260);
-    sun.addColorStop(0, 'rgba(255,255,230,1)');
-    sun.addColorStop(0.3, 'rgba(255,225,150,0.8)');
-    sun.addColorStop(1, 'rgba(255,200,130,0)');
+    g.fillRect(0, 0, 1200, 470);
+    const sun = g.createRadialGradient(900, 210, 4, 900, 210, 240);
+    sun.addColorStop(0, 'rgba(255,255,235,1)');
+    sun.addColorStop(0.25, 'rgba(255,236,170,0.7)');
+    sun.addColorStop(1, 'rgba(255,220,150,0)');
     g.fillStyle = sun;
-    g.fillRect(0, 0, 1200, 560);
-    const sea = g.createLinearGradient(0, 520, 0, 800);
-    sea.addColorStop(0, '#f3b27a');
-    sea.addColorStop(0.25, '#2fa6c4');
-    sea.addColorStop(1, '#0b5f9a');
-    g.fillStyle = sea;
-    g.fillRect(0, 520, 1200, 280);
-    g.fillStyle = 'rgba(255,240,200,0.55)';
-    for (let i = 0; i < 26; i++) g.fillRect(250 + ((i * 37) % 120) - 60, 540 + i * 9, 70 - i * 1.5, 3);
-    g.fillStyle = '#5a4636';
-    g.beginPath();
-    g.moveTo(640, 800);
-    g.lineTo(700, 600);
-    g.lineTo(820, 560);
-    g.lineTo(980, 610);
-    g.lineTo(1200, 560);
-    g.lineTo(1200, 800);
-    g.closePath();
-    g.fill();
-    const tx = 840;
-    g.fillStyle = '#f7f2e8';
-    g.beginPath();
-    g.moveTo(tx - 34, 565);
-    g.lineTo(tx + 34, 565);
-    g.lineTo(tx + 22, 250);
-    g.lineTo(tx - 22, 250);
-    g.closePath();
-    g.fill();
-    g.fillStyle = '#d6423a';
-    for (const y of [300, 400, 500]) {
+    g.fillRect(0, 0, 1200, 470);
+    const ridge = (base: number, amp: number, seed: number, color: string) => {
+      g.fillStyle = color;
       g.beginPath();
-      g.moveTo(tx - 22 - (y - 250) * 0.045, y);
-      g.lineTo(tx + 22 + (y - 250) * 0.045, y);
-      g.lineTo(tx + 22 + (y + 40 - 250) * 0.045, y + 40);
-      g.lineTo(tx - 22 - (y + 40 - 250) * 0.045, y + 40);
+      g.moveTo(0, 800);
+      for (let x = 0; x <= 1200; x += 20) {
+        const y = base - amp * (0.55 * Math.abs(Math.sin(x * 0.006 + seed)) + 0.45 * Math.abs(Math.sin(x * 0.017 + seed * 2)));
+        g.lineTo(x, y);
+      }
+      g.lineTo(1200, 800);
       g.closePath();
       g.fill();
-    }
-    g.fillStyle = '#2b2f36';
-    g.fillRect(tx - 30, 232, 60, 18);
-    g.fillStyle = '#ffe58a';
-    g.fillRect(tx - 18, 196, 36, 36);
-    g.fillStyle = '#d6423a';
+    };
+    ridge(430, 230, 1, '#7a9fc8');
+    ridge(470, 150, 3, '#4f8f7a');
+    ridge(520, 90, 5, '#2f8a4a');
+    const meadow = g.createLinearGradient(0, 520, 0, 800);
+    meadow.addColorStop(0, '#5cbf3c');
+    meadow.addColorStop(1, '#2f8f3a');
+    g.fillStyle = meadow;
+    g.fillRect(0, 540, 1200, 260);
+    const river = g.createLinearGradient(0, 540, 0, 800);
+    river.addColorStop(0, '#6fd0e8');
+    river.addColorStop(1, '#1b90b8');
+    g.fillStyle = river;
     g.beginPath();
-    g.moveTo(tx - 28, 196);
-    g.lineTo(tx, 160);
-    g.lineTo(tx + 28, 196);
+    g.moveTo(520, 540);
+    g.lineTo(640, 540);
+    g.bezierCurveTo(700, 620, 860, 700, 1000, 800);
+    g.lineTo(380, 800);
+    g.bezierCurveTo(480, 700, 500, 620, 520, 540);
     g.closePath();
     g.fill();
-    g.strokeStyle = '#2b2f36';
-    g.lineWidth = 4;
-    for (const [x, y] of [[420, 150], [500, 120], [560, 175]] as const) {
+    const pine = (x: number, y: number, h: number) => {
+      g.fillStyle = '#1d6b3a';
+      for (let i = 0; i < 3; i++) {
+        const w = h * (0.42 - i * 0.08);
+        const top = y - h + i * h * 0.28;
+        g.beginPath();
+        g.moveTo(x, top);
+        g.lineTo(x + w, top + h * 0.45);
+        g.lineTo(x - w, top + h * 0.45);
+        g.closePath();
+        g.fill();
+      }
+    };
+    for (let i = 0; i < 14; i++) pine(60 + i * 38, 600 + (i % 3) * 14, 90 + (i % 4) * 22);
+    for (let i = 0; i < 12; i++) pine(1130 - i * 40, 610 + (i % 3) * 16, 100 + (i % 4) * 20);
+    const bloom = ['#ffd23f', '#ff7aa8', '#ffffff', '#b78cff'];
+    for (let i = 0; i < 140; i++) {
+      g.fillStyle = bloom[i % 4];
+      const x = (i * 97) % 1200;
+      const y = 650 + ((i * 53) % 140);
       g.beginPath();
-      g.moveTo(x - 22, y + 6);
-      g.quadraticCurveTo(x - 10, y - 12, x, y);
-      g.quadraticCurveTo(x + 10, y - 12, x + 22, y + 6);
-      g.stroke();
+      g.arc(x, y, 4 + (i % 3), 0, 7);
+      g.fill();
     }
   });
 }
