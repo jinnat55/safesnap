@@ -23,6 +23,9 @@ Sources: Devpost hackathon page, /rules, /updates, /resources, /project-gallery 
 - Gemini Live Agent Challenge 2026: grand prize ORION (a focused, domain-specific co-pilot). No winner was labelled a privacy project, so privacy is an open lane, but winners had vivid demos.
 - No past winners exist for a Firebase AI Logic *hybrid* hackathon; this is the first one. Chrome Built-in AI Challenge 2025 winners were read earlier.
 
-## Not verified (a permission prompt went unanswered, so these were not fetched)
-- Current Firebase hybrid web docs and the Chrome guide (SDK version, flags, whether Nano image input works on stable Chrome without a flag). Re-check before the Nano test.
-- Hybrid explainer blog post.
+## Docs re-read (Nov 27) - confirmed
+- Firebase hybrid web docs: SDK 12.5.0+, desktop Chrome 139+, flag `chrome://flags/#prompt-api-for-gemini-nano-multimodal-input`, JPEG/PNG only, 9,216 tokens, inline data, structured output supported, `initializeDeviceModel()` after a user gesture, `ONLY_ON_DEVICE` waits for the download, default cloud model `gemini-3.5-flash-lite`. All match the code.
+- Chrome guide says cloud fallback with sensitive data needs user-facing terms and consent. This supports our no-silent-fallback design.
+- App Check: docs say enforced Nov 2 2026 (the Chrome guide says early July 2026). Never add localhost to reCAPTCHA domains; keep debug tokens out of production. Code now ignores the debug flag outside `npm run dev`.
+- AI monitoring in the Firebase console shows nothing for on-device runs. Hybrid inference is in preview.
+- The hybrid blog lists offline image captioning for accessibility as an example scenario. Our twist (privacy gate before sharing, no silent cloud) is the non-obvious part.

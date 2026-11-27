@@ -24,7 +24,7 @@ export function getAi(): AI {
   });
   const siteKey = env.VITE_APPCHECK_SITE_KEY;
   if (siteKey) {
-    if (env.VITE_APPCHECK_DEBUG === 'true') {
+    if (import.meta.env.DEV && env.VITE_APPCHECK_DEBUG === 'true') {
       // Local development and registered judge-demo sessions only. Never ship a debug build.
       (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean | string }).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
     }

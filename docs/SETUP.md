@@ -17,7 +17,7 @@ With no Firebase config, the dev server uses a **mock scanner** so you can see e
 2. Open **AI Logic** in the console and enable the **Gemini Developer API**.
 3. Open **App Check**, register the web app with **reCAPTCHA Enterprise**, and copy the site key.
 4. Copy `.env.example` to `.env` and fill in the `VITE_FIREBASE_*` values and `VITE_APPCHECK_SITE_KEY`. Never commit `.env`.
-5. For local development, set `VITE_APPCHECK_DEBUG=true`, run the app once, copy the debug token printed in the browser console, and register it under App Check > Apps > Manage debug tokens.
+5. Do not add `localhost` to the reCAPTCHA allowed domains. Debug tokens work only in `npm run dev` (the code ignores `VITE_APPCHECK_DEBUG` in production builds). For local development, set `VITE_APPCHECK_DEBUG=true`, run the app once, copy the debug token printed in the browser console, and register it under App Check > Apps > Manage debug tokens.
 
 ## 3. On-device model (Gemini Nano)
 
