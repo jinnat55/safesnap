@@ -5,10 +5,14 @@ import { describeInCloud, describeOnDevice } from './describe/describe';
 import { AUDIENCES, DeviceUnavailableError, type Audience, type Finding, type ScanOutcome } from './types';
 import { announce } from './ui/announcer';
 import { renderMeasured } from './ui/measured';
+import { createNature } from './ui/nature';
 import { createScene } from './ui/scene3d';
 import { actionButton, buildGrid, el, litCells, renderReport } from './ui/render';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+const natureHost = document.getElementById('nature');
+const nature = natureHost ? createNature(natureHost) : null;
+if (nature) document.body.classList.add('has-nature');
 const stage = $('stage');
 const glHost = $('gl');
 const scene = createScene(glHost);
