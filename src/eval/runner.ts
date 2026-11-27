@@ -8,7 +8,7 @@ const status = $('eval-status');
 let last: EvalResults | null = null;
 
 async function load(): Promise<ManifestImage[]> {
-  const res = await fetch('/eval/manifest.json');
+  const res = await fetch(`${import.meta.env.BASE_URL}eval/manifest.json`);
   return ((await res.json()) as { images: ManifestImage[] }).images;
 }
 
@@ -19,7 +19,7 @@ async function run(mode: 'device' | 'cloud'): Promise<void> {
   let source: EvalResults['engine'] = mode === 'device' ? 'ON_DEVICE' : 'IN_CLOUD';
   for (const [i, img] of images.entries()) {
     status.textContent = `Running ${i + 1} of ${images.length}…`;
-    const blob = await (await fetch(`/eval/${img.file}`)).blob();
+    const blob = await (await fetch(`${import.meta.env.BASE_URL}eval/${img.file}`)).blob();
     const file = new File([blob], `${img.id}.png`, { type: 'image/png' });
     try {
       const outcome = mode === 'device' ? await runDeviceScan(file) : await runCloudScan(file);

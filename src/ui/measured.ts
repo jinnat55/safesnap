@@ -9,7 +9,7 @@ export async function renderMeasured(): Promise<void> {
   if (!body) return;
   let results: EvalResults | null = null;
   try {
-    const res = await fetch('/eval/results.json', { cache: 'no-cache' });
+    const res = await fetch(`${import.meta.env.BASE_URL}eval/results.json`, { cache: 'no-cache' });
     if (res.ok) results = (await res.json()) as EvalResults;
   } catch {
     results = null;

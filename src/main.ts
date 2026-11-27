@@ -254,7 +254,7 @@ fileInput.addEventListener('change', () => {
   fileInput.value = '';
 });
 sampleBtn.addEventListener('click', async () => {
-  const res = await fetch('/samples/sample-desk.svg');
+  const res = await fetch(`${import.meta.env.BASE_URL}samples/sample-desk.svg`);
   const blob = await res.blob();
   loadFile(new File([blob], 'sample-desk.svg', { type: 'image/svg+xml' }));
 });

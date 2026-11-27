@@ -5,10 +5,15 @@ import { mockScan } from './mockScanner';
 
 export type ScannerMode = 'firebase' | 'mock';
 
-/** Mock is allowed only in development builds, so a production build can never fake a scan. */
+/**
+ * Mock is allowed only in development builds, so a production build can never fake a scan.
+ * The one exception is a design-preview build made with VITE_DESIGN_PREVIEW=true. It is never
+ * set in .env files, and the UI labels every result "Development mock".
+ */
 export function scannerMode(): ScannerMode {
   const wantsMock = import.meta.env.VITE_SCANNER_MODE === 'mock';
-  if (import.meta.env.DEV && (wantsMock || !isFirebaseConfigured())) return 'mock';
+  const preview = import.meta.env.VITE_DESIGN_PREVIEW === 'true';
+  if (preview || (import.meta.env.DEV && (wantsMock || !isFirebaseConfigured()))) return 'mock';
   return 'firebase';
 }
 

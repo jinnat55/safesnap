@@ -39,3 +39,7 @@ npx firebase-tools deploy --only hosting
 Open `/eval.html`, press **Run on this device**, and download `results.json`. Put it at `public/eval/results.json` and rebuild. The home page then shows the measured numbers. A mock run is never displayed.
 
 Regenerate the synthetic scenes (optional): `node scripts/make-eval-set.mjs` (needs Google Chrome).
+
+## Design preview build (optional)
+
+`VITE_DESIGN_PREVIEW=true npx vite build` makes a static build that uses the mock scanner, for sharing the look of the app before Firebase is set up. Every result is labelled "Development mock". Never set this variable in `.env` or for a real deploy.
