@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SafeSnap — check a photo before you share it</title>
   <meta name="description" content="A private checkpoint for photos. Gemini Nano looks for private items on your device first, and tells you honestly what it can and cannot see." />
-  <meta name="color-scheme" content="dark" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f1a24'/%3E%3Cpath d='M9 13V9h4M23 13V9h-4M9 19v4h4M23 19v4h-4' stroke='%23ffb84d' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <meta name="color-scheme" content="light" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23eaf2ff'/%3E%3Cpath d='M9 13V9h4M23 13V9h-4M9 19v4h4M23 19v4h-4' stroke='%232f62f0' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" />
 </head>
 <body>
   <a class="skip" href="#result">Skip to result</a>
@@ -30,17 +30,16 @@
       <p class="lede">SafeSnap looks for private items such as cards, papers, screens and faces, and says where it thinks they are. It never reads the text on them.</p>
 
       <div class="stage" id="stage" data-state="idle">
-        <div class="stage-inner" id="stage-inner">
-          <div class="frame" id="frame">
-            <img id="preview" alt="" hidden />
-            <div class="empty" id="empty">
-              <p class="empty-title">Choose a photo to check</p>
-              <p class="empty-hint">Choose, drop or paste (Ctrl+V) a photo. It stays in this tab.</p>
-            </div>
-            <div class="grid" id="grid" aria-hidden="true"></div>
-            <div class="beam" id="beam" aria-hidden="true"></div>
-            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
-          </div>
+        <div class="gl" id="gl" aria-hidden="true"></div>
+        <div class="frame" id="frame">
+          <img id="preview" alt="" hidden />
+          <div class="grid" id="grid" aria-hidden="true"></div>
+          <div class="beam" id="beam" aria-hidden="true"></div>
+          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        </div>
+        <div class="empty" id="empty">
+          <p class="empty-title">Choose a photo to check</p>
+          <p class="empty-hint">Choose, drop or paste (Ctrl+V) a photo. It stays in this tab.</p>
         </div>
       </div>
 

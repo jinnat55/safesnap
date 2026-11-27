@@ -2,14 +2,17 @@ import './styles.css';
 import { buildReport } from './report/report';
 import { runCloudScan, runDeviceScan } from './scanner';
 import { describeInCloud, describeOnDevice } from './describe/describe';
-import { AUDIENCES, DeviceUnavailableError, type Audience, type ScanOutcome } from './types';
+import { AUDIENCES, DeviceUnavailableError, type Audience, type Finding, type ScanOutcome } from './types';
 import { announce } from './ui/announcer';
 import { renderMeasured } from './ui/measured';
+import { createScene } from './ui/scene3d';
 import { actionButton, buildGrid, el, litCells, renderReport } from './ui/render';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const stage = $('stage');
-const stageInner = $('stage-inner');
+const glHost = $('gl');
+const scene = createScene(glHost);
+if (scene) stage.classList.add('has-gl');
 const preview = $<HTMLImageElement>('preview');
 const empty = $('empty');
 const grid = $('grid');
@@ -37,17 +40,22 @@ function currentAudience(): Audience {
 
 function setState(state: 'idle' | 'ready' | 'scanning' | 'result'): void {
   stage.dataset.state = state;
+  scene?.setState(state);
 }
 function setEngine(source: 'none' | ScanOutcome['source'], text: string): void {
   engine.dataset.source = source;
   engineText.textContent = text;
+}
+function markHits(findings: Finding[]): void {
+  litCells(grid, findings);
+  scene?.setHits(findings);
 }
 function clearOutcome(): void {
   actions.hidden = true;
   actions.replaceChildren();
   description.hidden = true;
   description.replaceChildren();
-  litCells(grid, []);
+  markHits([]);
 }
 function focusResult(): void {
   panel.focus({ preventScroll: false });
@@ -60,6 +68,7 @@ function loadFile(file: File): void {
   preview.alt = 'The photo you chose. SafeSnap has not checked it yet.';
   preview.hidden = false;
   empty.hidden = true;
+  scene?.setPhoto(preview.src);
   clearOutcome();
   setState('ready');
   scanBtn.hidden = false;
@@ -77,6 +86,7 @@ function resetToChoose(): void {
   preview.removeAttribute('src');
   preview.hidden = true;
   empty.hidden = false;
+  scene?.setPhoto(null);
   clearOutcome();
   scanBtn.hidden = true;
   setState('idle');
@@ -126,7 +136,7 @@ async function scan(): Promise<void> {
 function showResult(outcome: ScanOutcome): void {
   const report = buildReport(outcome, currentAudience());
   setState('result');
-  litCells(grid, outcome.result.findings);
+  markHits(outcome.result.findings);
   setEngine(outcome.source, outcome.source === 'ON_DEVICE' ? 'Checked on this device' : outcome.source === 'IN_CLOUD' ? 'Checked in the cloud, with your OK' : 'Development mock');
   title.textContent = report.headline;
   renderReport(body, report);
@@ -275,20 +285,5 @@ stage.addEventListener('drop', (e) => {
   const f = firstImage(e.dataTransfer?.files);
   if (f && !busy) loadFile(f);
 });
-
-// Subtle 3D tilt on the viewfinder. Off for people who prefer reduced motion.
-if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-  stage.addEventListener('pointermove', (e) => {
-    const r = stage.getBoundingClientRect();
-    const x = (e.clientX - r.left) / r.width - 0.5;
-    const y = (e.clientY - r.top) / r.height - 0.5;
-    stageInner.style.setProperty('--ry', `${(x * 6).toFixed(2)}deg`);
-    stageInner.style.setProperty('--rx', `${(-y * 5).toFixed(2)}deg`);
-  });
-  stage.addEventListener('pointerleave', () => {
-    stageInner.style.setProperty('--ry', '0deg');
-    stageInner.style.setProperty('--rx', '0deg');
-  });
-}
 
 void renderMeasured();
