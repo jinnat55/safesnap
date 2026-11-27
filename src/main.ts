@@ -5,14 +5,22 @@ import { describeInCloud, describeOnDevice } from './describe/describe';
 import { AUDIENCES, DeviceUnavailableError, type Audience, type Finding, type ScanOutcome } from './types';
 import { announce } from './ui/announcer';
 import { renderMeasured } from './ui/measured';
-import { createNature } from './ui/nature';
+import { createNature, type Nature, type SceneryKind } from './ui/nature';
 import { createScene } from './ui/scene3d';
 import { actionButton, buildGrid, el, litCells, renderReport } from './ui/render';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const natureHost = document.getElementById('nature');
-const nature = natureHost ? createNature(natureHost) : null;
-if (nature) document.body.classList.add('has-nature');
+let nature: Nature | null = null;
+function setScenery(kind: SceneryKind): void {
+  nature?.dispose();
+  nature = natureHost ? createNature(natureHost, kind) : null;
+  document.body.classList.toggle('has-nature', nature !== null);
+  document.querySelectorAll<HTMLButtonElement>('.scene-switch button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.scene === kind)));
+}
+const wanted = new URLSearchParams(location.search).get('scene');
+setScenery(wanted === 'sea' ? 'sea' : 'valley');
+document.querySelectorAll<HTMLButtonElement>('.scene-switch button').forEach((b) => b.addEventListener('click', () => setScenery(b.dataset.scene === 'sea' ? 'sea' : 'valley')));
 const stage = $('stage');
 const glHost = $('gl');
 const scene = createScene(glHost);

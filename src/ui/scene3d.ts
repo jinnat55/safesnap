@@ -21,33 +21,78 @@ const MAX_H = 3.1;
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
+/** A seaside photo shown on the print before a photo is chosen: lighthouse, rocks and gulls at golden hour. */
 function placeholderTexture(): THREE.CanvasTexture {
   return canvasTexture(1200, 800, (g) => {
-    const sky = g.createLinearGradient(0, 0, 0, 800);
-    sky.addColorStop(0, '#5aa7e6');
-    sky.addColorStop(0.5, '#cfe7f2');
-    sky.addColorStop(0.72, '#fbe3b8');
-    sky.addColorStop(1, '#fbe3b8');
+    const sky = g.createLinearGradient(0, 0, 0, 520);
+    sky.addColorStop(0, '#3f7fe0');
+    sky.addColorStop(0.55, '#ffb98a');
+    sky.addColorStop(1, '#ffe2a8');
     g.fillStyle = sky;
-    g.fillRect(0, 0, 1200, 800);
-    const sun = g.createRadialGradient(840, 470, 6, 840, 470, 240);
-    sun.addColorStop(0, 'rgba(255,255,235,1)');
-    sun.addColorStop(0.3, 'rgba(255,232,170,0.8)');
-    sun.addColorStop(1, 'rgba(255,220,150,0)');
+    g.fillRect(0, 0, 1200, 520);
+    const sun = g.createRadialGradient(300, 440, 6, 300, 440, 260);
+    sun.addColorStop(0, 'rgba(255,255,230,1)');
+    sun.addColorStop(0.3, 'rgba(255,225,150,0.8)');
+    sun.addColorStop(1, 'rgba(255,200,130,0)');
     g.fillStyle = sun;
-    g.fillRect(0, 0, 1200, 800);
-    const ridge = (base: number, amp: number, color: string, seed: number) => {
-      g.fillStyle = color;
+    g.fillRect(0, 0, 1200, 560);
+    const sea = g.createLinearGradient(0, 520, 0, 800);
+    sea.addColorStop(0, '#f3b27a');
+    sea.addColorStop(0.25, '#2fa6c4');
+    sea.addColorStop(1, '#0b5f9a');
+    g.fillStyle = sea;
+    g.fillRect(0, 520, 1200, 280);
+    g.fillStyle = 'rgba(255,240,200,0.55)';
+    for (let i = 0; i < 26; i++) g.fillRect(250 + ((i * 37) % 120) - 60, 540 + i * 9, 70 - i * 1.5, 3);
+    g.fillStyle = '#5a4636';
+    g.beginPath();
+    g.moveTo(640, 800);
+    g.lineTo(700, 600);
+    g.lineTo(820, 560);
+    g.lineTo(980, 610);
+    g.lineTo(1200, 560);
+    g.lineTo(1200, 800);
+    g.closePath();
+    g.fill();
+    const tx = 840;
+    g.fillStyle = '#f7f2e8';
+    g.beginPath();
+    g.moveTo(tx - 34, 565);
+    g.lineTo(tx + 34, 565);
+    g.lineTo(tx + 22, 250);
+    g.lineTo(tx - 22, 250);
+    g.closePath();
+    g.fill();
+    g.fillStyle = '#d6423a';
+    for (const y of [300, 400, 500]) {
       g.beginPath();
-      g.moveTo(0, 800);
-      for (let x = 0; x <= 1200; x += 16) g.lineTo(x, base + Math.sin(x * 0.007 + seed) * amp + Math.sin(x * 0.019 + seed * 2) * amp * 0.4);
-      g.lineTo(1200, 800);
+      g.moveTo(tx - 22 - (y - 250) * 0.045, y);
+      g.lineTo(tx + 22 + (y - 250) * 0.045, y);
+      g.lineTo(tx + 22 + (y + 40 - 250) * 0.045, y + 40);
+      g.lineTo(tx - 22 - (y + 40 - 250) * 0.045, y + 40);
       g.closePath();
       g.fill();
-    };
-    ridge(470, 70, '#9db9c9', 1);
-    ridge(560, 50, '#5f8f7a', 2.4);
-    ridge(650, 36, '#2f6b49', 4.1);
+    }
+    g.fillStyle = '#2b2f36';
+    g.fillRect(tx - 30, 232, 60, 18);
+    g.fillStyle = '#ffe58a';
+    g.fillRect(tx - 18, 196, 36, 36);
+    g.fillStyle = '#d6423a';
+    g.beginPath();
+    g.moveTo(tx - 28, 196);
+    g.lineTo(tx, 160);
+    g.lineTo(tx + 28, 196);
+    g.closePath();
+    g.fill();
+    g.strokeStyle = '#2b2f36';
+    g.lineWidth = 4;
+    for (const [x, y] of [[420, 150], [500, 120], [560, 175]] as const) {
+      g.beginPath();
+      g.moveTo(x - 22, y + 6);
+      g.quadraticCurveTo(x - 10, y - 12, x, y);
+      g.quadraticCurveTo(x + 10, y - 12, x + 22, y + 6);
+      g.stroke();
+    }
   });
 }
 
@@ -289,8 +334,8 @@ export function createScene(container: HTMLElement): Scene3D | null {
     strapMesh.scale.set(1, 1, 3.2);
     group.add(strapMesh);
     const lens = buildLens();
-    lens.scale.set(0.27, 0.27, 0.42);
-    lens.position.set(0.15, -0.25, 0.9);
+    lens.scale.set(0.37, 0.37, 0.55);
+    lens.position.set(0.2, -0.2, 0.95);
     group.add(lens);
   }
 
@@ -317,23 +362,16 @@ export function createScene(container: HTMLElement): Scene3D | null {
     const printW = photoW + side * 2;
     const printH = photoH + topM + chin;
 
-    // Big lens standing behind the print, upper right.
-    const bigLens = buildLens();
-    bigLens.position.set(2.4, 1.2, -2.0);
-    bigLens.scale.setScalar(0.9);
-    bigLens.rotation.set(0.06, -0.28, 0);
-    content.add(bigLens);
-
-    // Small camera in the lower right, facing the print.
+    // One camera: body with a large coated lens, resting beside the print and facing it.
     const cam = new THREE.Group();
-    cam.position.set(3.6, -2.0, 1.3);
-    cam.scale.setScalar(0.74);
-    cam.rotation.set(0.08, -0.5, -0.03);
+    cam.position.set(2.75, 0.45, -0.3);
+    cam.scale.setScalar(1.28);
+    cam.rotation.set(0.06, -0.42, -0.02);
     buildCamera(cam);
     content.add(cam);
 
     const printGroup = new THREE.Group();
-    printGroup.position.set(-1.7, 0.2, 0);
+    printGroup.position.set(-1.9, 0.1, 0.6);
     content.add(printGroup);
 
     const paper = new THREE.Mesh(

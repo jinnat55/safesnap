@@ -18,10 +18,16 @@
       <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#fff8ea" stroke="#ff8a2b" stroke-width="2"/><circle cx="16" cy="16" r="8" fill="none" stroke="#1f7a4d" stroke-width="2"/><circle cx="16" cy="16" r="3.4" fill="#1f7a4d"/></svg>
       <span>SafeSnap</span>
     </a>
-    <nav class="nav" aria-label="Page sections">
-      <a href="#how">How it works</a>
-      <a href="#measured">How well it works</a>
-    </nav>
+    <div class="header-right">
+      <nav class="nav" aria-label="Page sections">
+        <a href="#how">How it works</a>
+        <a href="#measured">How well it works</a>
+      </nav>
+      <div class="scene-switch" role="group" aria-label="Background scenery">
+        <button type="button" data-scene="valley" aria-pressed="true">Valley</button>
+        <button type="button" data-scene="sea" aria-pressed="false">Sea</button>
+      </div>
+    </div>
   </header>
 
   <main class="layout" id="top">
@@ -112,7 +118,20 @@
   </dialog>
 
   <footer class="foot">
-    <p>Best-effort check by a small AI model. It can miss things. Open source, MIT license. Built for #BuildHybridAI with Firebase AI Logic.</p>
+    <div class="foot-card">
+      <div class="foot-brand">
+        <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#fff8ea" stroke="#ff8a2b" stroke-width="2"/><circle cx="16" cy="16" r="8" fill="none" stroke="#1f7a4d" stroke-width="2"/><circle cx="16" cy="16" r="3.4" fill="#1f7a4d"/></svg>
+        <span>SafeSnap</span>
+      </div>
+      <p class="foot-about">A private checkpoint for photos. It is a best-effort check by a small AI model and can miss things, especially small items.</p>
+      <nav class="foot-links" aria-label="Footer">
+        <a href="#top">Check a photo</a>
+        <a href="#how">How it works</a>
+        <a href="#measured">How well it works</a>
+        <a href="https://github.com/jinnat55/safesnap">Source code on GitHub</a>
+      </nav>
+      <p class="foot-small">Open source, MIT license. Built for #BuildHybridAI with Firebase AI Logic. Your photo stays in this tab unless you choose to send it to the cloud.</p>
+    </div>
   </footer>
 
   <script type="module" src="/src/main.ts"></script>
