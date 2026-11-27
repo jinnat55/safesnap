@@ -11,15 +11,20 @@ export interface Scene3D {
   dispose(): void;
 }
 
-// Photography palette: shutter orange, scan teal, safelight red.
+// Natural palette: morning sky, lake, pine forest, snow peaks, shutter orange.
 const ORANGE = 0xff8a2b;
-const HIT = 0xff3d5a;
-const MAX_W = 4.5;
-const MAX_H = 3.3;
+const HIT = 0xe5384f;
+const HORIZON = 0xe3efe9;
+const MAX_W = 4.2;
+const MAX_H = 3.1;
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const smooth = (a: number, b: number, x: number) => {
+  const t = clamp01((x - a) / (b - a));
+  return t * t * (3 - 2 * t);
+};
 
 function canvasTexture(w: number, h: number, draw: (g: CanvasRenderingContext2D) => void, srgb = true): THREE.CanvasTexture {
   const c = document.createElement('canvas');
@@ -31,55 +36,104 @@ function canvasTexture(w: number, h: number, draw: (g: CanvasRenderingContext2D)
   return t;
 }
 
-/** Golden-hour landscape shown on the print before a photo is chosen. Decorative; the real prompt is DOM text. */
+/* ---------- procedural terrain noise ---------- */
+function hash(ix: number, iy: number): number {
+  let n = Math.imul(ix, 374761393) + Math.imul(iy, 668265263);
+  n = Math.imul(n ^ (n >>> 13), 1274126177);
+  return ((n ^ (n >>> 16)) >>> 0) / 4294967295;
+}
+function noise(x: number, y: number): number {
+  const ix = Math.floor(x);
+  const iy = Math.floor(y);
+  const fx = x - ix;
+  const fy = y - iy;
+  const u = fx * fx * (3 - 2 * fx);
+  const v = fy * fy * (3 - 2 * fy);
+  const a = hash(ix, iy);
+  const b = hash(ix + 1, iy);
+  const c = hash(ix, iy + 1);
+  const d = hash(ix + 1, iy + 1);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+function fbm(x: number, y: number, oct = 5): number {
+  let s = 0;
+  let a = 0.5;
+  let f = 1;
+  for (let i = 0; i < oct; i++) {
+    s += a * noise(x * f, y * f);
+    f *= 2.03;
+    a *= 0.5;
+  }
+  return s;
+}
+function ridged(x: number, y: number): number {
+  let s = 0;
+  let a = 0.55;
+  let f = 1;
+  for (let i = 0; i < 5; i++) {
+    s += a * (1 - Math.abs(2 * noise(x * f, y * f) - 1));
+    f *= 2.1;
+    a *= 0.5;
+  }
+  return s;
+}
+
+const LAKE = { x: 0, z: -8, rx: 34, rz: 30 };
+/** Terrain height in local coordinates. Water sits at 0. Mountains rise towards -z. */
+function heightAt(x: number, z: number): number {
+  const back = smooth(26, 95, -z);
+  const hills = fbm(x * 0.05 + 7, z * 0.05 + 3) * 3.2;
+  const r = ridged(x * 0.028 + 11, z * 0.028 - 5);
+  const peaks = Math.pow(r, 2.2) * 30 * back * (0.55 + 0.45 * smooth(0, 45, Math.abs(x) + 8));
+  const sides = smooth(22, 58, Math.abs(x)) * 9 * (0.6 + fbm(x * 0.04, z * 0.04));
+  const q = Math.pow((x - LAKE.x) / LAKE.rx, 2) + Math.pow((z - LAKE.z) / LAKE.rz, 2);
+  const carve = Math.max(0, 1 - q);
+  const shore = smooth(0, 1, 1 - q);
+  return 1.6 + hills * (1 - 0.5 * carve) + peaks * (1 - 0.9 * carve) + sides - 7.5 * shore;
+}
+
+function skyTexture(): THREE.CanvasTexture {
+  return canvasTexture(8, 512, (g) => {
+    const gr = g.createLinearGradient(0, 0, 0, 512);
+    gr.addColorStop(0, '#3d8fd6');
+    gr.addColorStop(0.28, '#74b9e8');
+    gr.addColorStop(0.46, '#bfe0ef');
+    gr.addColorStop(0.5, '#e3efe9');
+    gr.addColorStop(0.56, '#d6e8dd');
+    gr.addColorStop(1, '#9ec7b0');
+    g.fillStyle = gr;
+    g.fillRect(0, 0, 8, 512);
+  });
+}
+
 function placeholderTexture(): THREE.CanvasTexture {
   return canvasTexture(1200, 800, (g) => {
     const sky = g.createLinearGradient(0, 0, 0, 800);
-    sky.addColorStop(0, '#0f3d4a');
-    sky.addColorStop(0.45, '#2a8c8f');
-    sky.addColorStop(0.7, '#f2a65a');
-    sky.addColorStop(1, '#ffd08a');
+    sky.addColorStop(0, '#5aa7e6');
+    sky.addColorStop(0.5, '#cfe7f2');
+    sky.addColorStop(0.72, '#fbe3b8');
+    sky.addColorStop(1, '#fbe3b8');
     g.fillStyle = sky;
     g.fillRect(0, 0, 1200, 800);
-    const sun = g.createRadialGradient(780, 520, 10, 780, 520, 260);
-    sun.addColorStop(0, 'rgba(255,248,220,1)');
-    sun.addColorStop(0.25, 'rgba(255,214,140,0.85)');
-    sun.addColorStop(1, 'rgba(255,170,90,0)');
+    const sun = g.createRadialGradient(840, 470, 6, 840, 470, 240);
+    sun.addColorStop(0, 'rgba(255,255,235,1)');
+    sun.addColorStop(0.3, 'rgba(255,232,170,0.8)');
+    sun.addColorStop(1, 'rgba(255,220,150,0)');
     g.fillStyle = sun;
     g.fillRect(0, 0, 1200, 800);
     const ridge = (base: number, amp: number, color: string, seed: number) => {
       g.fillStyle = color;
       g.beginPath();
       g.moveTo(0, 800);
-      for (let x = 0; x <= 1200; x += 20) {
-        g.lineTo(x, base + Math.sin(x * 0.006 + seed) * amp + Math.sin(x * 0.017 + seed * 2) * amp * 0.4);
-      }
+      for (let x = 0; x <= 1200; x += 16) g.lineTo(x, base + Math.sin(x * 0.007 + seed) * amp + Math.sin(x * 0.019 + seed * 2) * amp * 0.4);
       g.lineTo(1200, 800);
       g.closePath();
       g.fill();
     };
-    ridge(560, 40, '#3b6f73', 1);
-    ridge(620, 34, '#1f4b55', 2.4);
-    ridge(690, 26, '#0b2a33', 4.1);
+    ridge(470, 70, '#9db9c9', 1);
+    ridge(560, 50, '#5f8f7a', 2.4);
+    ridge(650, 36, '#2f6b49', 4.1);
   });
-}
-
-/** Studio environment with coloured softboxes, so glass and metal pick up real-looking reflections. */
-function studioEnvironment(): THREE.Scene {
-  const s = new THREE.Scene();
-  s.background = new THREE.Color(0x05090c);
-  const box = (w: number, h: number, color: number, intensity: number, x: number, y: number, z: number) => {
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(intensity), side: THREE.DoubleSide }));
-    m.position.set(x, y, z);
-    m.lookAt(0, 0, 0);
-    s.add(m);
-  };
-  box(14, 8, 0xffb070, 9, -12, 9, 10); // warm key softbox
-  box(3, 16, 0x35f0dd, 7, 14, 1, -4); // teal strip, right-back
-  box(18, 3, 0xffffff, 6, 0, 14, 2); // overhead strip
-  box(6, 6, 0xff4fa0, 3, 10, -6, 8); // magenta kicker
-  box(20, 4, 0x2a6f8a, 2, 0, -12, 4); // cool floor bounce
-  return s;
 }
 
 export function createScene(container: HTMLElement): Scene3D | null {
@@ -88,44 +142,211 @@ export function createScene(container: HTMLElement): Scene3D | null {
 
   let renderer: THREE.WebGLRenderer;
   try {
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
   } catch {
     return null;
   }
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.15;
+  renderer.toneMappingExposure = 1.0;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.setClearColor(0x000000, 0);
+  renderer.setClearColor(HORIZON, 1);
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(HORIZON, 34, 120);
+
+  // Sky dome, also used as the reflection environment for glass, chrome and water.
+  const skyTex = skyTexture();
+  const sunDir = new THREE.Vector3(0.5, 0.26, -0.82).normalize();
+  const skyGeo = new THREE.SphereGeometry(150, 48, 32);
+  const sky = new THREE.Mesh(skyGeo, new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, fog: false, depthWrite: false, toneMapped: false }));
+  scene.add(sky);
+
+  const envScene = new THREE.Scene();
+  envScene.add(new THREE.Mesh(new THREE.SphereGeometry(50, 32, 16), new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide })));
+  const sunBall = new THREE.Mesh(new THREE.SphereGeometry(4, 16, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xfff0c8).multiplyScalar(14) }));
+  sunBall.position.copy(sunDir).multiplyScalar(40);
+  envScene.add(sunBall);
   const pmrem = new THREE.PMREMGenerator(renderer);
-  const envScene = studioEnvironment();
   scene.environment = pmrem.fromScene(envScene, 0.02).texture;
-  envScene.traverse((o) => {
-    const m = o as THREE.Mesh;
-    m.geometry?.dispose();
-    (m.material as THREE.Material | undefined)?.dispose();
+  scene.environmentIntensity = 0.9;
+
+  const sun = new THREE.DirectionalLight(0xffe6bd, 2.6);
+  sun.position.copy(sunDir).multiplyScalar(60);
+  const front = new THREE.DirectionalLight(0xfff6e8, 1.1);
+  front.position.set(-6, 8, 14);
+  scene.add(sun, front, new THREE.HemisphereLight(0xcfe8ff, 0x7aa07a, 0.7));
+
+  const sunGlow = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: canvasTexture(256, 256, (g) => {
+        const r = g.createRadialGradient(128, 128, 4, 128, 128, 128);
+        r.addColorStop(0, 'rgba(255,252,235,1)');
+        r.addColorStop(0.18, 'rgba(255,236,180,0.7)');
+        r.addColorStop(0.5, 'rgba(255,214,150,0.18)');
+        r.addColorStop(1, 'rgba(255,214,150,0)');
+        g.fillStyle = r;
+        g.fillRect(0, 0, 256, 256);
+      }),
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      fog: false,
+      toneMapped: false,
+    }),
+  );
+  sunGlow.position.copy(sunDir).multiplyScalar(110);
+  sunGlow.scale.setScalar(90);
+  scene.add(sunGlow);
+
+  /* ---------- landscape ---------- */
+  const world = new THREE.Group();
+  world.position.set(0, -3.4, -2);
+  scene.add(world);
+  const worldDispose: Array<{ dispose(): void }> = [];
+
+  const TW = 150;
+  const TD = 120;
+  const SX = 240;
+  const SZ = 180;
+  const terrainGeo = new THREE.PlaneGeometry(TW, TD, SX, SZ);
+  terrainGeo.rotateX(-Math.PI / 2);
+  terrainGeo.translate(0, 0, -TD / 2 + 14);
+  const pos = terrainGeo.attributes.position as THREE.BufferAttribute;
+  for (let i = 0; i < pos.count; i++) pos.setY(i, heightAt(pos.getX(i), pos.getZ(i)));
+  terrainGeo.computeVertexNormals();
+  const nrm = terrainGeo.attributes.normal as THREE.BufferAttribute;
+  const colors = new Float32Array(pos.count * 3);
+  const c = new THREE.Color();
+  const palette = {
+    sand: new THREE.Color(0xcdbf94),
+    meadow: new THREE.Color(0x86b45c),
+    forest: new THREE.Color(0x3d7a47),
+    deep: new THREE.Color(0x2b5e3b),
+    rock: new THREE.Color(0x857f76),
+    snow: new THREE.Color(0xf6f9fc),
+  };
+  for (let i = 0; i < pos.count; i++) {
+    const h = pos.getY(i);
+    const slope = 1 - nrm.getY(i);
+    const n = fbm(pos.getX(i) * 0.3, pos.getZ(i) * 0.3, 3);
+    c.copy(palette.sand);
+    c.lerp(palette.meadow, smooth(0.1, 0.9, h + n * 0.6));
+    c.lerp(palette.forest, smooth(1.6, 4.5, h + n * 1.4));
+    c.lerp(palette.deep, smooth(3.2, 7, h) * 0.6);
+    c.lerp(palette.rock, smooth(6.5, 11, h + n * 2) * 0.9);
+    c.lerp(palette.rock, smooth(0.16, 0.34, slope + n * 0.06));
+    c.lerp(palette.snow, smooth(14, 19, h + n * 3) * (1 - smooth(0.22, 0.5, slope)));
+    colors[i * 3] = c.r;
+    colors[i * 3 + 1] = c.g;
+    colors[i * 3 + 2] = c.b;
+  }
+  terrainGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  const terrainMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0 });
+  world.add(new THREE.Mesh(terrainGeo, terrainMat));
+  worldDispose.push(terrainGeo, terrainMat);
+
+  // Lake with gently moving ripples.
+  const ripple = canvasTexture(
+    256,
+    256,
+    (g) => {
+      g.fillStyle = '#808080';
+      g.fillRect(0, 0, 256, 256);
+      for (let i = 0; i < 420; i++) {
+        g.strokeStyle = `rgba(${i % 2 ? 255 : 0},${i % 2 ? 255 : 0},${i % 2 ? 255 : 0},0.12)`;
+        g.lineWidth = 1 + Math.random() * 2;
+        const x = Math.random() * 256;
+        const y = Math.random() * 256;
+        g.beginPath();
+        g.moveTo(x, y);
+        g.lineTo(x + 8 + Math.random() * 26, y + (Math.random() - 0.5) * 3);
+        g.stroke();
+      }
+    },
+    false,
+  );
+  ripple.wrapS = ripple.wrapT = THREE.RepeatWrapping;
+  ripple.repeat.set(14, 10);
+  const waterMat = new THREE.MeshPhysicalMaterial({ color: 0x2b86a3, roughness: 0.06, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 1.6, bumpMap: ripple, bumpScale: 0.35, transparent: true, opacity: 0.93 });
+  const waterGeo = new THREE.PlaneGeometry(TW, TD);
+  waterGeo.rotateX(-Math.PI / 2);
+  waterGeo.translate(0, 0, -TD / 2 + 14);
+  const water = new THREE.Mesh(waterGeo, waterMat);
+  water.position.y = 0;
+  world.add(water);
+  worldDispose.push(waterGeo, waterMat, ripple);
+
+  // Pine forest: two stacked cones per tree, instanced.
+  const TREES = reduced ? 1100 : 1800;
+  const coneA = new THREE.ConeGeometry(0.55, 1.7, 7);
+  coneA.translate(0, 1.0, 0);
+  const coneB = new THREE.ConeGeometry(0.4, 1.3, 7);
+  coneB.translate(0, 1.85, 0);
+  const treeMat = new THREE.MeshStandardMaterial({ roughness: 0.9, flatShading: true });
+  const lower = new THREE.InstancedMesh(coneA, treeMat, TREES);
+  const upper = new THREE.InstancedMesh(coneB, treeMat, TREES);
+  const m4 = new THREE.Matrix4();
+  const quat = new THREE.Quaternion();
+  const scl = new THREE.Vector3();
+  const tp = new THREE.Vector3();
+  const col = new THREE.Color();
+  let placed = 0;
+  for (let k = 0; k < 40000 && placed < TREES; k++) {
+    const x = (hash(k, 91) - 0.5) * 120;
+    const z = -12 - hash(k, 17) * 80;
+    const h = heightAt(x, z);
+    const dens = fbm(x * 0.07 + 40, z * 0.07);
+    if (h < 0.45 || h > 7.5 || dens < 0.42) continue;
+    const e = 0.6;
+    const slope = Math.abs(heightAt(x + e, z) - h) + Math.abs(heightAt(x, z + e) - h);
+    if (slope > 1.1) continue;
+    const s = 0.55 + hash(k, 5) * 0.8 + smooth(0, 40, -z) * 0.6;
+    tp.set(x, h - 0.05, z);
+    scl.set(s, s * (0.85 + hash(k, 8) * 0.5), s);
+    quat.setFromAxisAngle(new THREE.Vector3(0, 1, 0), hash(k, 3) * 6.28);
+    m4.compose(tp, quat, scl);
+    lower.setMatrixAt(placed, m4);
+    upper.setMatrixAt(placed, m4);
+    col.setHSL(0.31 + hash(k, 12) * 0.06, 0.42 + hash(k, 2) * 0.2, 0.2 + hash(k, 6) * 0.12);
+    lower.setColorAt(placed, col);
+    upper.setColorAt(placed, col);
+    placed++;
+  }
+  lower.count = upper.count = placed;
+  world.add(lower, upper);
+  worldDispose.push(coneA, coneB, treeMat);
+
+  // Soft clouds.
+  const cloudTex = canvasTexture(256, 128, (g) => {
+    for (let i = 0; i < 14; i++) {
+      const x = 40 + Math.random() * 176;
+      const y = 50 + Math.random() * 40;
+      const r = 20 + Math.random() * 28;
+      const gr = g.createRadialGradient(x, y, 2, x, y, r);
+      gr.addColorStop(0, 'rgba(255,255,255,0.75)');
+      gr.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = gr;
+      g.fillRect(0, 0, 256, 128);
+    }
   });
+  const clouds: THREE.Sprite[] = [];
+  for (let i = 0; i < 7; i++) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: cloudTex, transparent: true, opacity: 0.55, depthWrite: false, fog: false, toneMapped: false }));
+    sp.position.set(-70 + i * 24 + hash(i, 1) * 10, 26 + hash(i, 2) * 22, -80 - hash(i, 3) * 25);
+    sp.scale.set(60 + hash(i, 4) * 30, 24 + hash(i, 5) * 10, 1);
+    scene.add(sp);
+    clouds.push(sp);
+  }
 
-  const key = new THREE.SpotLight(0xffc592, 70, 40, 0.7, 0.8, 1.6);
-  key.position.set(-6, 6, 9);
-  key.target.position.set(0, 0, 0);
-  const rim = new THREE.PointLight(0x35f0dd, 40, 30, 1.6);
-  rim.position.set(7, 2, -3);
-  scene.add(key, key.target, rim, new THREE.AmbientLight(0x8fb7c4, 0.35));
-
-  const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 80);
+  const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 400);
   const root = new THREE.Group();
   scene.add(root);
 
   const placeholder = placeholderTexture();
   let photoTexture: THREE.Texture | null = null;
   let aspect = 1.5;
-  let printW = MAX_W + 0.9;
-  let printH = MAX_H + 1.6;
   let content = new THREE.Group();
   let dispose: Array<{ dispose(): void }> = [];
   let beam: THREE.Group | null = null;
@@ -135,7 +356,6 @@ export function createScene(container: HTMLElement): Scene3D | null {
   let lensRing: THREE.MeshStandardMaterial | null = null;
   let photoW = MAX_W;
   let photoH = MAX_H;
-  let photoCenterY = 0;
   let hitGroup = new THREE.Group();
   let hits: Array<{ mesh: THREE.Object3D; start: number }> = [];
   let current: Finding[] = [];
@@ -147,156 +367,142 @@ export function createScene(container: HTMLElement): Scene3D | null {
   let px = 0;
   let py = 0;
   let size = { w: 1, h: 1 };
+  let camBase = { y: 1.4, z: 20, lookY: -0.4 };
 
   const track = <T extends { dispose(): void }>(x: T): T => {
     dispose.push(x);
     return x;
   };
 
-  /** A camera lens seen from the front, behind the print: knurled barrel, engraved ring, coated glass. */
-  function buildLens(group: THREE.Group): void {
-    const R = 3.1;
-    const dark = track(new THREE.MeshStandardMaterial({ color: 0x39424a, metalness: 1, roughness: 0.34, envMapIntensity: 2 }));
-    const knurl = track(
+  /** A rangefinder-style camera: chrome top plate, leather body, orange shutter button, coated lens. */
+  function buildCamera(group: THREE.Group): void {
+    const leatherBump = track(
       canvasTexture(
-        512,
-        64,
+        128,
+        128,
         (g) => {
           g.fillStyle = '#808080';
-          g.fillRect(0, 0, 512, 64);
-          for (let i = 0; i < 512; i += 8) {
-            g.fillStyle = '#e0e0e0';
-            g.fillRect(i, 0, 3, 64);
-            g.fillStyle = '#303030';
-            g.fillRect(i + 4, 0, 3, 64);
+          g.fillRect(0, 0, 128, 128);
+          for (let i = 0; i < 900; i++) {
+            g.fillStyle = Math.random() > 0.5 ? '#a8a8a8' : '#5a5a5a';
+            g.beginPath();
+            g.arc(Math.random() * 128, Math.random() * 128, 1.2 + Math.random() * 1.6, 0, 6.28);
+            g.fill();
           }
         },
         false,
       ),
     );
-    knurl.wrapS = knurl.wrapT = THREE.RepeatWrapping;
-    knurl.repeat.set(3, 1);
-    const grip = track(new THREE.MeshStandardMaterial({ color: 0x2a3036, metalness: 0.9, roughness: 0.45, envMapIntensity: 1.6, bumpMap: knurl, bumpScale: 1.6 }));
+    leatherBump.wrapS = leatherBump.wrapT = THREE.RepeatWrapping;
+    leatherBump.repeat.set(3, 1);
+    const leather = track(new THREE.MeshStandardMaterial({ color: 0x1d2220, roughness: 0.7, metalness: 0.05, bumpMap: leatherBump, bumpScale: 1.4 }));
+    const chrome = track(new THREE.MeshStandardMaterial({ color: 0xe4e8ea, metalness: 1, roughness: 0.16, envMapIntensity: 1.3 }));
+    const black = track(new THREE.MeshStandardMaterial({ color: 0x121416, metalness: 0.7, roughness: 0.35 }));
 
-    const barrelGeo = track(new THREE.CylinderGeometry(R, R, 3.2, 128, 1, true));
-    const barrel = new THREE.Mesh(barrelGeo, grip);
+    const body = new THREE.Mesh(track(new RoundedBoxGeometry(3.3, 1.25, 1.15, 5, 0.1)), leather);
+    body.position.y = -0.28;
+    const top = new THREE.Mesh(track(new RoundedBoxGeometry(3.3, 0.5, 1.15, 5, 0.12)), chrome);
+    top.position.y = 0.56;
+    const base = new THREE.Mesh(track(new RoundedBoxGeometry(3.3, 0.14, 1.15, 4, 0.06)), chrome);
+    base.position.y = -0.95;
+    const hump = new THREE.Mesh(track(new RoundedBoxGeometry(1.0, 0.36, 0.72, 4, 0.08)), chrome);
+    hump.position.set(-0.75, 0.96, -0.05);
+    group.add(body, top, base, hump);
+
+    // Shutter button and dial.
+    const shutterMat = track(new THREE.MeshStandardMaterial({ color: ORANGE, metalness: 0.5, roughness: 0.3, emissive: ORANGE, emissiveIntensity: 0.15 }));
+    const btn = new THREE.Mesh(track(new THREE.CylinderGeometry(0.1, 0.1, 0.14, 24)), shutterMat);
+    btn.position.set(0.95, 0.88, 0.1);
+    const collar = new THREE.Mesh(track(new THREE.CylinderGeometry(0.18, 0.18, 0.06, 32)), chrome);
+    collar.position.set(0.95, 0.83, 0.1);
+    const dial = new THREE.Mesh(track(new THREE.CylinderGeometry(0.34, 0.34, 0.2, 48)), chrome);
+    dial.position.set(1.15, 0.91, -0.1);
+    group.add(btn, collar, dial);
+
+    // Rangefinder windows.
+    const glassMat = track(new THREE.MeshPhysicalMaterial({ color: 0x0a1418, roughness: 0.03, metalness: 0.2, clearcoat: 1, envMapIntensity: 2.5 }));
+    for (const [x, w] of [[-1.1, 0.34], [-0.55, 0.2]] as const) {
+      const win = new THREE.Mesh(track(new RoundedBoxGeometry(w, 0.28, 0.04, 2, 0.015)), glassMat);
+      win.position.set(x, 0.58, 0.575);
+      group.add(win);
+    }
+
+    // Leather strap, curving from a side lug.
+    const strap = new THREE.CatmullRomCurve3([new THREE.Vector3(-1.62, 0.1, 0), new THREE.Vector3(-2.3, -0.5, 0.2), new THREE.Vector3(-2.5, -1.6, 0.3), new THREE.Vector3(-2.1, -2.6, 0.2)]);
+    const strapMesh = new THREE.Mesh(track(new THREE.TubeGeometry(strap, 30, 0.07, 6, false)), leather);
+    strapMesh.scale.set(1, 1, 3.2);
+    group.add(strapMesh);
+
+    // Lens barrel and coated front glass.
+    const lens = new THREE.Group();
+    const R = 3.1;
+    const grip = track(new THREE.MeshStandardMaterial({ color: 0x23282c, metalness: 0.9, roughness: 0.4, envMapIntensity: 1.6 }));
+    const barrel = new THREE.Mesh(track(new THREE.CylinderGeometry(R, R, 3.2, 96, 1, true)), grip);
     barrel.rotation.x = Math.PI / 2;
     barrel.position.z = -1.6;
-    group.add(barrel);
-
-    const frontRing = new THREE.Mesh(track(new THREE.CylinderGeometry(R + 0.06, R + 0.06, 0.5, 128)), dark);
+    const frontRing = new THREE.Mesh(track(new THREE.CylinderGeometry(R + 0.08, R + 0.08, 0.5, 96)), black);
     frontRing.rotation.x = Math.PI / 2;
-    frontRing.position.z = 0;
-    group.add(frontRing);
-
-    // Orange accent ring (shutter orange).
-    lensRing = track(new THREE.MeshStandardMaterial({ color: ORANGE, emissive: ORANGE, emissiveIntensity: 0.35, metalness: 0.6, roughness: 0.3 }));
-    const ring = new THREE.Mesh(track(new THREE.TorusGeometry(R - 0.12, 0.05, 16, 160)), lensRing);
+    lensRing = track(new THREE.MeshStandardMaterial({ color: ORANGE, emissive: ORANGE, emissiveIntensity: 0.25, metalness: 0.6, roughness: 0.3 }));
+    const ring = new THREE.Mesh(track(new THREE.TorusGeometry(R - 0.14, 0.06, 12, 128)), lensRing);
     ring.position.z = 0.27;
-    group.add(ring);
-
-    // Engraved ring: text around the front face.
-    const engraved = track(
-      canvasTexture(1024, 1024, (g) => {
-        g.clearRect(0, 0, 1024, 1024);
-        g.translate(512, 512);
-        g.fillStyle = 'rgba(235,240,240,0.85)';
-        g.font = '600 34px "Atkinson Hyperlegible", system-ui, sans-serif';
-        g.textAlign = 'center';
-        g.textBaseline = 'middle';
-        const text = 'SAFESNAP  •  PRIVACY CHECK  1:1.4  •  ON DEVICE FIRST  •  ';
-        const rad = 440;
-        const step = (Math.PI * 2) / text.length;
-        for (let i = 0; i < text.length; i++) {
-          g.save();
-          g.rotate(i * step);
-          g.translate(0, -rad);
-          g.fillText(text[i], 0, 0);
-          g.restore();
-        }
-      }),
-    );
-    const face = new THREE.Mesh(
-      track(new THREE.RingGeometry(2.05, R - 0.2, 128)),
-      track(new THREE.MeshStandardMaterial({ color: 0x4a545c, metalness: 1, roughness: 0.3, envMapIntensity: 2.2 })),
-    );
+    const face = new THREE.Mesh(track(new THREE.RingGeometry(2.05, R - 0.2, 96)), track(new THREE.MeshStandardMaterial({ color: 0x5a646b, metalness: 1, roughness: 0.3, envMapIntensity: 1.8 })));
     face.position.z = 0.26;
-    group.add(face);
-    const text = new THREE.Mesh(
-      track(new THREE.PlaneGeometry((R - 0.2) * 2 * 1.16, (R - 0.2) * 2 * 1.16)),
-      track(new THREE.MeshBasicMaterial({ map: engraved, transparent: true, depthWrite: false, toneMapped: false })),
-    );
-    text.position.z = 0.262;
-    group.add(text);
-
-    // Inner hood wall.
-    const hood = new THREE.Mesh(track(new THREE.CylinderGeometry(2.05, 1.85, 0.7, 96, 1, true)), track(new THREE.MeshStandardMaterial({ color: 0x050607, metalness: 0.9, roughness: 0.3, side: THREE.BackSide })));
+    const hood = new THREE.Mesh(track(new THREE.CylinderGeometry(2.05, 1.85, 0.7, 64, 1, true)), track(new THREE.MeshStandardMaterial({ color: 0x050607, metalness: 0.9, roughness: 0.3, side: THREE.BackSide })));
     hood.rotation.x = Math.PI / 2;
     hood.position.z = -0.1;
-    group.add(hood);
-
-    // Curved front glass element, coated: dark body with iridescent reflections.
     const sphereR = 5;
-    const cap = Math.asin(1.9 / sphereR);
     const glass = new THREE.Mesh(
-      track(new THREE.SphereGeometry(sphereR, 96, 48, 0, Math.PI * 2, 0, cap)),
-      track(new THREE.MeshPhysicalMaterial({ color: 0x03070b, metalness: 0.1, roughness: 0.02, clearcoat: 1, clearcoatRoughness: 0, iridescence: 1, iridescenceIOR: 1.7, iridescenceThicknessRange: [250, 700], envMapIntensity: 4, reflectivity: 1 })),
+      track(new THREE.SphereGeometry(sphereR, 64, 32, 0, Math.PI * 2, 0, Math.asin(1.9 / sphereR))),
+      track(new THREE.MeshPhysicalMaterial({ color: 0x050b10, metalness: 0.1, roughness: 0.02, clearcoat: 1, clearcoatRoughness: 0, iridescence: 1, iridescenceIOR: 1.7, iridescenceThicknessRange: [250, 700], envMapIntensity: 3.2 })),
     );
     glass.rotation.x = Math.PI / 2;
-    glass.position.z = 0.0 - sphereR + 0.28;
-    group.add(glass);
-
-    // Inner elements and aperture seen through the glass.
+    glass.position.z = -sphereR + 0.28;
     const depth = track(
-      canvasTexture(768, 768, (g) => {
-        const c = 384;
-        const bg = g.createRadialGradient(c, c, 10, c, c, c);
-        bg.addColorStop(0, 'rgba(60,20,90,0.9)');
-        bg.addColorStop(0.35, 'rgba(10,60,80,0.75)');
-        bg.addColorStop(0.7, 'rgba(120,40,110,0.35)');
+      canvasTexture(512, 512, (g) => {
+        const m = 256;
+        const bg = g.createRadialGradient(m, m, 6, m, m, m);
+        bg.addColorStop(0, 'rgba(70,30,110,0.9)');
+        bg.addColorStop(0.4, 'rgba(10,70,90,0.7)');
+        bg.addColorStop(0.8, 'rgba(120,50,110,0.3)');
         bg.addColorStop(1, 'rgba(0,0,0,0)');
         g.fillStyle = bg;
-        g.fillRect(0, 0, 768, 768);
-        for (const [r, col] of [[330, 'rgba(53,240,221,0.35)'], [250, 'rgba(255,79,160,0.3)'], [170, 'rgba(255,170,90,0.28)'], [100, 'rgba(120,180,255,0.3)']] as const) {
-          g.strokeStyle = col;
-          g.lineWidth = 6;
+        g.fillRect(0, 0, 512, 512);
+        for (const [r, cc] of [[220, 'rgba(80,240,200,0.35)'], [165, 'rgba(255,110,170,0.3)'], [110, 'rgba(255,190,110,0.28)']] as const) {
+          g.strokeStyle = cc;
+          g.lineWidth = 5;
           g.beginPath();
-          g.arc(c, c, r, 0, Math.PI * 2);
+          g.arc(m, m, r, 0, Math.PI * 2);
           g.stroke();
         }
-        // Nine aperture blades.
         g.fillStyle = 'rgba(0,0,0,0.92)';
         g.beginPath();
         for (let i = 0; i < 9; i++) {
           const a = (i / 9) * Math.PI * 2 - Math.PI / 2;
-          g.lineTo(c + Math.cos(a) * 90, c + Math.sin(a) * 90);
+          g.lineTo(m + Math.cos(a) * 60, m + Math.sin(a) * 60);
         }
         g.closePath();
-        g.arc(c, c, 140, 0, Math.PI * 2, true);
+        g.arc(m, m, 95, 0, Math.PI * 2, true);
         g.fill('evenodd');
       }),
     );
     lensGlow = track(new THREE.MeshBasicMaterial({ map: depth, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.8, toneMapped: false }));
-    const inner = new THREE.Mesh(track(new THREE.CircleGeometry(1.85, 96)), lensGlow);
+    const inner = new THREE.Mesh(track(new THREE.CircleGeometry(1.85, 64)), lensGlow);
     inner.position.z = 0.3;
-    group.add(inner);
-
-    // Specular streak across the curved glass.
     const streak = new THREE.Mesh(
-      track(new THREE.CircleGeometry(1.85, 96)),
+      track(new THREE.CircleGeometry(1.85, 64)),
       track(
         new THREE.MeshBasicMaterial({
           map: track(
-            canvasTexture(256, 256, (g) => {
-              const gr = g.createLinearGradient(30, 30, 226, 226);
-              gr.addColorStop(0.18, 'rgba(255,255,255,0)');
-              gr.addColorStop(0.3, 'rgba(255,255,255,0.55)');
-              gr.addColorStop(0.38, 'rgba(255,255,255,0)');
-              gr.addColorStop(0.62, 'rgba(255,255,255,0)');
-              gr.addColorStop(0.7, 'rgba(120,255,240,0.25)');
-              gr.addColorStop(0.78, 'rgba(255,255,255,0)');
+            canvasTexture(128, 128, (g) => {
+              const gr = g.createLinearGradient(16, 16, 112, 112);
+              gr.addColorStop(0.2, 'rgba(255,255,255,0)');
+              gr.addColorStop(0.32, 'rgba(255,255,255,0.6)');
+              gr.addColorStop(0.42, 'rgba(255,255,255,0)');
+              gr.addColorStop(0.64, 'rgba(255,255,255,0)');
+              gr.addColorStop(0.72, 'rgba(170,255,230,0.3)');
+              gr.addColorStop(0.8, 'rgba(255,255,255,0)');
               g.fillStyle = gr;
-              g.fillRect(0, 0, 256, 256);
+              g.fillRect(0, 0, 128, 128);
             }),
           ),
           transparent: true,
@@ -307,32 +513,10 @@ export function createScene(container: HTMLElement): Scene3D | null {
       ),
     );
     streak.position.z = 0.34;
-    group.add(streak);
-
-    // Soft halo behind the lens, so it glows against the dark page.
-    const halo = new THREE.Mesh(
-      track(new THREE.PlaneGeometry(R * 3.4, R * 3.4)),
-      track(
-        new THREE.MeshBasicMaterial({
-          map: track(
-            canvasTexture(256, 256, (g) => {
-              const r = g.createRadialGradient(128, 128, 20, 128, 128, 128);
-              r.addColorStop(0, 'rgba(255,138,43,0.5)');
-              r.addColorStop(0.5, 'rgba(45,226,208,0.14)');
-              r.addColorStop(1, 'rgba(0,0,0,0)');
-              g.fillStyle = r;
-              g.fillRect(0, 0, 256, 256);
-            }),
-          ),
-          transparent: true,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false,
-          toneMapped: false,
-        }),
-      ),
-    );
-    halo.position.z = -0.9;
-    group.add(halo);
+    lens.add(barrel, frontRing, ring, face, hood, glass, inner, streak);
+    lens.scale.set(0.27, 0.27, 0.42);
+    lens.position.set(0.15, -0.25, 0.9);
+    group.add(lens);
   }
 
   function build(): void {
@@ -350,46 +534,43 @@ export function createScene(container: HTMLElement): Scene3D | null {
       photoH = MAX_H;
       photoW = MAX_H * aspect;
     }
-    const side = 0.36;
-    const top = 0.36;
-    const chin = 1.0;
-    printW = photoW + side * 2;
-    printH = photoH + top + chin;
-    photoCenterY = (chin - top) / 2; // photo sits above the chin
+    const side = 0.34;
+    const topM = 0.34;
+    const chin = 0.95;
+    const printW = photoW + side * 2;
+    const printH = photoH + topM + chin;
 
-    // The lens, offset behind the print.
-    const lens = new THREE.Group();
-    lens.position.set(1.0, 0.8, -1.6);
-    lens.scale.setScalar(0.86);
-    buildLens(lens);
-    content.add(lens);
+    // The camera, resting in the lower right and facing the print.
+    const cameraObj = new THREE.Group();
+    cameraObj.position.set(3.05, -1.25, 1.2);
+    cameraObj.scale.setScalar(0.88);
+    cameraObj.rotation.set(0.08, -0.5, -0.03);
+    buildCamera(cameraObj);
+    content.add(cameraObj);
 
     const printGroup = new THREE.Group();
-    printGroup.position.set(-1.0, -1.2, 0);
+    printGroup.position.set(-1.9, 0.75, 0);
     content.add(printGroup);
 
-    // Instant-print paper.
     const paper = new THREE.Mesh(
       track(new RoundedBoxGeometry(printW, printH, 0.09, 4, 0.05)),
-      track(new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.5, clearcoat: 0.3, clearcoatRoughness: 0.35, envMapIntensity: 0.3, emissive: 0xfff6e6, emissiveIntensity: 0.55 })),
+      track(new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.5, clearcoat: 0.3, clearcoatRoughness: 0.35, envMapIntensity: 0.3, emissive: 0xfff8ea, emissiveIntensity: 0.4 })),
     );
     printGroup.add(paper);
 
     const photoGroup = new THREE.Group();
-    photoGroup.position.set(0, photoCenterY, 0.05);
+    photoGroup.position.set(0, (chin - topM) / 2, 0.05);
     printGroup.add(photoGroup);
 
-    const photoMat = track(new THREE.MeshBasicMaterial({ map: photoTexture ?? placeholder, toneMapped: false }));
-    const photo = new THREE.Mesh(track(new THREE.PlaneGeometry(photoW, photoH)), photoMat);
+    const photo = new THREE.Mesh(track(new THREE.PlaneGeometry(photoW, photoH)), track(new THREE.MeshBasicMaterial({ map: photoTexture ?? placeholder, toneMapped: false })));
     photo.position.z = 0.001;
     photoGroup.add(photo);
 
-    // Glossy sweep across the photo.
     sheenTex = track(
       canvasTexture(512, 256, (g) => {
         const grad = g.createLinearGradient(0, 0, 512, 256);
         grad.addColorStop(0.3, 'rgba(255,255,255,0)');
-        grad.addColorStop(0.5, 'rgba(255,255,255,0.3)');
+        grad.addColorStop(0.5, 'rgba(255,255,255,0.28)');
         grad.addColorStop(0.7, 'rgba(255,255,255,0)');
         g.fillStyle = grad;
         g.fillRect(0, 0, 512, 256);
@@ -397,16 +578,12 @@ export function createScene(container: HTMLElement): Scene3D | null {
     );
     sheenTex.wrapS = THREE.RepeatWrapping;
     sheenTex.repeat.set(0.7, 1);
-    const sheen = new THREE.Mesh(
-      track(new THREE.PlaneGeometry(photoW, photoH)),
-      track(new THREE.MeshBasicMaterial({ map: sheenTex, transparent: true, depthWrite: false, toneMapped: false })),
-    );
+    const sheen = new THREE.Mesh(track(new THREE.PlaneGeometry(photoW, photoH)), track(new THREE.MeshBasicMaterial({ map: sheenTex, transparent: true, depthWrite: false, toneMapped: false })));
     sheen.position.z = 0.004;
     photoGroup.add(sheen);
 
-    // 3×3 grid lines: dark and light pair so they read on any photo.
-    const lineDark = track(new THREE.MeshBasicMaterial({ color: 0x04141a, transparent: true, opacity: 0.4, toneMapped: false }));
-    const lineLight = track(new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, toneMapped: false }));
+    const lineDark = track(new THREE.MeshBasicMaterial({ color: 0x0b2a1c, transparent: true, opacity: 0.4, toneMapped: false }));
+    const lineLight = track(new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, toneMapped: false }));
     for (const f of [1, 2]) {
       const x = -photoW / 2 + (photoW * f) / 3;
       const y = -photoH / 2 + (photoH * f) / 3;
@@ -419,10 +596,9 @@ export function createScene(container: HTMLElement): Scene3D | null {
       }
     }
 
-    // Viewfinder corner brackets floating in front of the print (shutter orange).
-    brackets = track(new THREE.MeshStandardMaterial({ color: ORANGE, emissive: ORANGE, emissiveIntensity: 0.55, roughness: 0.3, metalness: 0.4, side: THREE.DoubleSide }));
-    const L = 0.55;
-    const th = 0.09;
+    brackets = track(new THREE.MeshStandardMaterial({ color: ORANGE, emissive: ORANGE, emissiveIntensity: 0.4, roughness: 0.3, metalness: 0.4, side: THREE.DoubleSide }));
+    const L = 0.5;
+    const th = 0.085;
     const arm = new THREE.Shape();
     arm.moveTo(0, 0);
     arm.lineTo(L, 0);
@@ -431,17 +607,16 @@ export function createScene(container: HTMLElement): Scene3D | null {
     arm.lineTo(th, -L);
     arm.lineTo(0, -L);
     arm.closePath();
-    const armGeo = track(new THREE.ExtrudeGeometry(arm, { depth: 0.08, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.015, bevelSegments: 2 }));
+    const armGeo = track(new THREE.ExtrudeGeometry(arm, { depth: 0.07, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.015, bevelSegments: 2 }));
     for (const sx of [-1, 1]) {
       for (const sy of [-1, 1]) {
         const b = new THREE.Mesh(armGeo, brackets);
         b.scale.set(-sx, sy, 1);
-        b.position.set(sx * (photoW / 2 + 0.16), sy * (photoH / 2 + 0.16), 0.42);
+        b.position.set(sx * (photoW / 2 + 0.15), sy * (photoH / 2 + 0.15), 0.4);
         photoGroup.add(b);
       }
     }
 
-    // Scan beam: a sheet of teal light with a bright leading edge.
     beam = new THREE.Group();
     const trail = new THREE.Mesh(
       track(new THREE.PlaneGeometry(photoW + 0.3, 1.0)),
@@ -450,9 +625,9 @@ export function createScene(container: HTMLElement): Scene3D | null {
           map: track(
             canvasTexture(8, 128, (g) => {
               const grad = g.createLinearGradient(0, 0, 0, 128);
-              grad.addColorStop(0, 'rgba(45,226,208,0)');
-              grad.addColorStop(0.85, 'rgba(45,226,208,0.5)');
-              grad.addColorStop(1, 'rgba(220,255,250,0.95)');
+              grad.addColorStop(0, 'rgba(255,214,120,0)');
+              grad.addColorStop(0.85, 'rgba(255,200,90,0.5)');
+              grad.addColorStop(1, 'rgba(255,255,235,0.95)');
               g.fillStyle = grad;
               g.fillRect(0, 0, 8, 128);
             }),
@@ -465,7 +640,7 @@ export function createScene(container: HTMLElement): Scene3D | null {
       ),
     );
     trail.position.y = 0.5;
-    const edge = new THREE.Mesh(track(new THREE.BoxGeometry(photoW + 0.3, 0.03, 0.03)), track(new THREE.MeshBasicMaterial({ color: 0xdffffb, toneMapped: false })));
+    const edge = new THREE.Mesh(track(new THREE.BoxGeometry(photoW + 0.3, 0.03, 0.03)), track(new THREE.MeshBasicMaterial({ color: 0xfffbe8, toneMapped: false })));
     beam.add(trail, edge);
     beam.position.z = 0.2;
     beam.visible = false;
@@ -473,29 +648,6 @@ export function createScene(container: HTMLElement): Scene3D | null {
 
     hitGroup = new THREE.Group();
     photoGroup.add(hitGroup);
-
-    // Contact shadow on the lens face behind the print.
-    const shadow = new THREE.Mesh(
-      track(new THREE.PlaneGeometry(printW * 1.3, printH * 1.3)),
-      track(
-        new THREE.MeshBasicMaterial({
-          map: track(
-            canvasTexture(256, 256, (g) => {
-              const r = g.createRadialGradient(128, 128, 20, 128, 128, 128);
-              r.addColorStop(0, 'rgba(0,0,0,0.6)');
-              r.addColorStop(1, 'rgba(0,0,0,0)');
-              g.fillStyle = r;
-              g.fillRect(0, 0, 256, 256);
-            }),
-          ),
-          transparent: true,
-          depthWrite: false,
-          toneMapped: false,
-        }),
-      ),
-    );
-    shadow.position.set(0.35, -0.45, -0.5);
-    printGroup.add(shadow);
 
     applyHits();
     fit();
@@ -505,13 +657,18 @@ export function createScene(container: HTMLElement): Scene3D | null {
   function fit(): void {
     const tan = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
     const a = size.w / size.h;
-    const needW = 8.6;
-    const needH = 7.6;
+    const needW = 10.2;
+    const needH = 6.6;
     const d = Math.max(needH / (2 * tan), needW / (2 * tan * a));
     camera.aspect = a;
-    camera.position.set(0, 0, d);
-    camera.lookAt(0, 0, 0);
+    camBase = { y: 1.0, z: d, lookY: 0.9 };
     camera.updateProjectionMatrix();
+    placeCamera();
+  }
+
+  function placeCamera(): void {
+    camera.position.set(px * 1.1, camBase.y - py * 0.5, camBase.z);
+    camera.lookAt(0, camBase.lookY, 0);
   }
 
   function resize(): void {
@@ -532,15 +689,10 @@ export function createScene(container: HTMLElement): Scene3D | null {
     hits = [];
     current.forEach((f, i) => {
       const [x, y] = cellCenter(f.cell);
-      const cw = photoW / 3 - 0.1;
-      const ch = photoH / 3 - 0.1;
-      const geo = track(new RoundedBoxGeometry(cw, ch, 0.08, 3, 0.05));
+      const geo = track(new RoundedBoxGeometry(photoW / 3 - 0.1, photoH / 3 - 0.1, 0.08, 3, 0.05));
       const low = f.confidence === 'low';
-      const mesh = new THREE.Mesh(
-        geo,
-        track(new THREE.MeshPhysicalMaterial({ color: HIT, emissive: HIT, emissiveIntensity: low ? 0.3 : 0.6, transparent: true, opacity: low ? 0.3 : 0.5, roughness: 0.15, clearcoat: 1 })),
-      );
-      const edges = new THREE.LineSegments(track(new THREE.EdgesGeometry(geo)), track(new THREE.LineBasicMaterial({ color: 0xffd0d8 })));
+      const mesh = new THREE.Mesh(geo, track(new THREE.MeshPhysicalMaterial({ color: HIT, emissive: HIT, emissiveIntensity: low ? 0.25 : 0.5, transparent: true, opacity: low ? 0.35 : 0.55, roughness: 0.15, clearcoat: 1 })));
+      const edges = new THREE.LineSegments(track(new THREE.EdgesGeometry(geo)), track(new THREE.LineBasicMaterial({ color: 0xffe3e8 })));
       const holder = new THREE.Group();
       holder.add(mesh, edges);
       holder.position.set(x, y, 0.06);
@@ -553,17 +705,26 @@ export function createScene(container: HTMLElement): Scene3D | null {
     t += dt;
     intro = Math.min(1, intro + dt / 1.6);
     const e = easeOut(intro);
-    root.scale.setScalar(0.9 + 0.1 * e);
-    const targetY = -0.22 + px * 0.3 + (1 - e) * -0.8;
-    const targetX = 0.07 - py * 0.16;
+    root.scale.setScalar(0.92 + 0.08 * e);
+    const targetY = 0.1 + px * 0.16 + (1 - e) * -0.6;
+    const targetX = 0.03 - py * 0.08;
     const k = Math.min(1, dt * 5);
     root.rotation.y += (targetY - root.rotation.y) * k;
     root.rotation.x += (targetX - root.rotation.x) * k;
-    root.position.y = reduced ? 0 : Math.sin(t * 0.9) * 0.06;
+    root.position.y = reduced ? 0 : Math.sin(t * 0.9) * 0.07;
+    placeCamera();
+    if (!reduced) {
+      ripple.offset.x = (t * 0.004) % 1;
+      ripple.offset.y = (t * 0.002) % 1;
+      clouds.forEach((cl, i) => {
+        cl.position.x += dt * (0.5 + i * 0.08);
+        if (cl.position.x > 110) cl.position.x = -110;
+      });
+    }
     if (sheenTex) sheenTex.offset.x = 0.15 - px * 0.35;
     const scanning = state === 'scanning' && !reduced;
-    if (brackets) brackets.emissiveIntensity = scanning ? 0.6 + 0.6 * Math.sin(t * 6) ** 2 : 0.55;
-    if (lensRing) lensRing.emissiveIntensity = scanning ? 0.5 + 0.9 * Math.sin(t * 5) ** 2 : 0.35;
+    if (brackets) brackets.emissiveIntensity = scanning ? 0.5 + 0.6 * Math.sin(t * 6) ** 2 : 0.4;
+    if (lensRing) lensRing.emissiveIntensity = scanning ? 0.4 + 0.9 * Math.sin(t * 5) ** 2 : 0.25;
     if (lensGlow) lensGlow.opacity = scanning ? 0.85 + 0.15 * Math.sin(t * 5) : 0.8;
     if (beam) {
       beam.visible = state === 'scanning';
@@ -658,6 +819,12 @@ export function createScene(container: HTMLElement): Scene3D | null {
       container.removeEventListener('pointermove', onMove);
       container.removeEventListener('pointerleave', onLeave);
       dispose.forEach((d) => d.dispose());
+      worldDispose.forEach((d) => d.dispose());
+      lower.dispose();
+      upper.dispose();
+      skyGeo.dispose();
+      skyTex.dispose();
+      cloudTex.dispose();
       placeholder.dispose();
       pmrem.dispose();
       renderer.dispose();
