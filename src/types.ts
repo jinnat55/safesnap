@@ -72,3 +72,6 @@ export class ScanParseError extends Error {
     this.name = 'ScanParseError';
   }
 }
+
+export const AUDIENCES = ['family', 'friends', 'strangers', 'public'] as const;
+export type Audience = (typeof AUDIENCES)[number];

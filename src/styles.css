@@ -174,3 +174,12 @@ dialog h2 { font-family: var(--display); margin: 0 0 8px; font-size: 1.5rem; }
 
 /* the real file input is visually hidden, so show its focus on the visible label */
 #file:focus-visible + .btn { outline: 3px solid var(--safelight); outline-offset: 3px; }
+
+.audience { margin: 20px 0 0; padding: 0; border: 0; display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+.audience legend { float: left; margin-right: 6px; padding: 0; color: var(--muted); font-size: 0.95rem; }
+.audience label { position: relative; }
+.audience input { position: absolute; opacity: 0; inset: 0; }
+.audience label { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--bg-2); cursor: pointer; }
+.audience label:has(input:checked) { background: var(--safelight); border-color: var(--safelight); color: var(--safelight-ink); font-weight: 700; }
+.audience label:has(input:focus-visible) { outline: 3px solid var(--safelight); outline-offset: 3px; }
+.stage.dragging .frame { border-color: var(--safelight); box-shadow: 0 0 0 3px rgba(255,184,77,.45), 0 40px 80px -30px rgba(0,0,0,.75); }

@@ -1,4 +1,4 @@
-import type { Category, Finding, GridCell, ScanOutcome } from '../types';
+import type { Audience, Category, Finding, GridCell, ScanOutcome } from '../types';
 
 const CATEGORY_PHRASE: Record<Category, { article: 'a' | 'an' | ''; noun: string }> = {
   face: { article: 'a', noun: 'face or part of a face' },
@@ -63,7 +63,26 @@ export function engineLine(source: ScanOutcome['source']): string {
  * Builds the honest report. By design it never says a photo is "safe": the most it says is
  * that nothing was found and that it cannot be certain.
  */
-export function buildReport(outcome: ScanOutcome): Report {
+const AUDIENCE_ADVICE: Record<Audience, { found: string; none: string }> = {
+  family: {
+    found: 'Family may be fine with some of these. Check each item before you send.',
+    none: 'Family can still see small details a quick check can miss.',
+  },
+  friends: {
+    found: 'Friends can zoom in and see details you cannot. Decide item by item.',
+    none: 'Friends can still see small details a quick check can miss.',
+  },
+  strangers: {
+    found: 'Strangers will see everything in the frame. Retaking without these items is the surest option.',
+    none: 'Strangers will see everything in the frame. If you can, ask someone you trust to look too.',
+  },
+  public: {
+    found: 'Anyone can copy a public photo. Retake or crop before you post it.',
+    none: 'Anyone can copy a public photo. If you can, ask someone you trust to look before you post.',
+  },
+};
+
+export function buildReport(outcome: ScanOutcome, audience?: Audience): Report {
   const { result, source } = outcome;
   const items = result.findings.map((finding) => ({ sentence: describeFinding(finding), finding }));
   const n = items.length;
@@ -79,6 +98,7 @@ export function buildReport(outcome: ScanOutcome): Report {
   if (items.some((i) => i.finding.size === 'small')) {
     advice.push('Small items are the easiest to miss. Consider retaking the photo closer, or cropping.');
   }
+  if (audience) advice.push(AUDIENCE_ADVICE[audience][n > 0 ? 'found' : 'none']);
   if (n > 0) {
     advice.push('You decide what happens next. Nothing is sent anywhere until you choose.');
   }

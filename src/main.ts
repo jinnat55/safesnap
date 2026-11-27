@@ -2,7 +2,7 @@ import './styles.css';
 import { buildReport } from './report/report';
 import { runCloudScan, runDeviceScan } from './scanner';
 import { describeInCloud, describeOnDevice } from './describe/describe';
-import { DeviceUnavailableError, type ScanOutcome } from './types';
+import { AUDIENCES, DeviceUnavailableError, type Audience, type ScanOutcome } from './types';
 import { announce } from './ui/announcer';
 import { renderMeasured } from './ui/measured';
 import { actionButton, buildGrid, el, litCells, renderReport } from './ui/render';
@@ -29,6 +29,11 @@ let current: File | null = null;
 let busy = false;
 
 buildGrid(grid);
+
+function currentAudience(): Audience {
+  const v = document.querySelector<HTMLInputElement>('input[name="audience"]:checked')?.value;
+  return AUDIENCES.find((a) => a === v) ?? 'friends';
+}
 
 function setState(state: 'idle' | 'ready' | 'scanning' | 'result'): void {
   stage.dataset.state = state;
@@ -119,7 +124,7 @@ async function scan(): Promise<void> {
 }
 
 function showResult(outcome: ScanOutcome): void {
-  const report = buildReport(outcome);
+  const report = buildReport(outcome, currentAudience());
   setState('result');
   litCells(grid, outcome.result.findings);
   setEngine(outcome.source, outcome.source === 'ON_DEVICE' ? 'Checked on this device' : outcome.source === 'IN_CLOUD' ? 'Checked in the cloud, with your OK' : 'Development mock');
@@ -254,6 +259,22 @@ sampleBtn.addEventListener('click', async () => {
   loadFile(new File([blob], 'sample-desk.svg', { type: 'image/svg+xml' }));
 });
 scanBtn.addEventListener('click', () => void scan());
+
+function firstImage(files: FileList | File[] | null | undefined): File | undefined {
+  return Array.from(files ?? []).find((f) => f.type.startsWith('image/'));
+}
+document.addEventListener('paste', (e) => {
+  const f = firstImage(e.clipboardData?.files);
+  if (f && !busy) { e.preventDefault(); loadFile(f); }
+});
+stage.addEventListener('dragover', (e) => { e.preventDefault(); stage.classList.add('dragging'); });
+stage.addEventListener('dragleave', () => stage.classList.remove('dragging'));
+stage.addEventListener('drop', (e) => {
+  e.preventDefault();
+  stage.classList.remove('dragging');
+  const f = firstImage(e.dataTransfer?.files);
+  if (f && !busy) loadFile(f);
+});
 
 // Subtle 3D tilt on the viewfinder. Off for people who prefer reduced motion.
 if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {

@@ -49,3 +49,17 @@ describe('buildReport', () => {
     );
   });
 });
+
+import { buildReport as _build } from '../src/report/report';
+describe('audience advice', () => {
+  const clean = { result: { findings: [], imageQuality: 'clear' as const }, source: 'ON_DEVICE' as const, elapsedMs: 1 };
+  const found = { result: { findings: [{ category: 'card_like_object' as const, cell: 'center' as const, size: 'medium' as const, confidence: 'high' as const }], imageQuality: 'clear' as const }, source: 'ON_DEVICE' as const, elapsedMs: 1 };
+  it('adds audience advice and never claims safety', () => {
+    for (const a of ['family', 'friends', 'strangers', 'public'] as const) {
+      const text = [..._build(clean, a).advice, ..._build(found, a).advice, _build(clean, a).headline].join(' ').toLowerCase();
+      expect(text).not.toMatch(/\bsafe\b/);
+    }
+    expect(_build(found, 'public').advice.join(' ')).toMatch(/Anyone can copy/);
+    expect(_build(found).advice.join(' ')).not.toMatch(/Anyone can copy/);
+  });
+});

@@ -35,7 +35,7 @@
             <img id="preview" alt="" hidden />
             <div class="empty" id="empty">
               <p class="empty-title">Choose a photo to check</p>
-              <p class="empty-hint">JPEG, PNG, or most phone photos. It stays in this tab.</p>
+              <p class="empty-hint">Choose, drop or paste (Ctrl+V) a photo. It stays in this tab.</p>
             </div>
             <div class="grid" id="grid" aria-hidden="true"></div>
             <div class="beam" id="beam" aria-hidden="true"></div>
@@ -50,6 +50,14 @@
         <button type="button" class="btn" id="sample">Try a sample photo</button>
         <button type="button" class="btn btn-scan" id="scan" hidden>Check this photo</button>
       </div>
+
+      <fieldset class="audience" id="audience">
+        <legend>Who will see this photo?</legend>
+        <label><input type="radio" name="audience" value="family" /> Family</label>
+        <label><input type="radio" name="audience" value="friends" checked /> Friends</label>
+        <label><input type="radio" name="audience" value="strangers" /> Strangers</label>
+        <label><input type="radio" name="audience" value="public" /> Anyone online</label>
+      </fieldset>
     </section>
 
     <section class="panel" id="result" tabindex="-1" aria-labelledby="result-title">
