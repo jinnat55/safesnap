@@ -67,3 +67,9 @@ tests/                     vitest unit tests
   says so and advises a retake.
 - Judges' machines may not run Nano (22 GB free disk, 16 GB RAM or a GPU with >4 GB VRAM).
   The consent-based cloud path must work end to end.
+
+## Firebase products used
+- **Firebase AI Logic** (hybrid inference): every model call. Gemini Nano on device, a Gemini cloud model only after per-photo consent.
+- **App Check** (reCAPTCHA Enterprise / Fraud Defense): required by AI Logic.
+- **Remote Config**: optional `cloud_model` parameter to change the cloud model without a redeploy. Built-in default, 3 s timeout, never blocks a scan (`src/firebase/remote.ts`).
+- **Hosting**: the public test link for judges.

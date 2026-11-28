@@ -1,7 +1,7 @@
 import { getGenerativeModel, InferenceMode } from 'firebase/ai';
 import { getAi } from '../firebase/client';
 import { imagePart, prepareImage } from '../image';
-import { CLOUD_MODEL } from '../firebase/models';
+import { cloudModel } from '../firebase/models';
 import { DeviceUnavailableError, type InferenceSource, type ScanOutcome } from '../types';
 import { SCAN_PROMPT } from './prompt';
 import { SCAN_SCHEMA } from './schema';
@@ -29,7 +29,7 @@ export function createCloudScanModel() {
   return getGenerativeModel(getAi(), {
     mode: InferenceMode.ONLY_IN_CLOUD,
     inCloudParams: {
-      model: CLOUD_MODEL,
+      model: cloudModel(),
       generationConfig: { responseMimeType: 'application/json', responseSchema: SCAN_SCHEMA },
     },
   });

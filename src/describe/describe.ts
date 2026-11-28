@@ -1,7 +1,7 @@
 import { getGenerativeModel, InferenceMode } from 'firebase/ai';
 import { getAi } from '../firebase/client';
 import { imagePart, prepareImage } from '../image';
-import { CLOUD_MODEL } from '../firebase/models';
+import { cloudModel } from '../firebase/models';
 import { DeviceUnavailableError, type DescribeOutcome } from '../types';
 import { DESCRIBE_DETAILED_PROMPT, DESCRIBE_SHORT_PROMPT } from '../scanner/prompt';
 import { scannerMode } from '../scanner';
@@ -42,7 +42,7 @@ export async function describeInCloud(file: File): Promise<DescribeOutcome> {
   if (scannerMode() === 'mock') return mockDescribe('detailed', started);
   const model = getGenerativeModel(getAi(), {
     mode: InferenceMode.ONLY_IN_CLOUD,
-    inCloudParams: { model: CLOUD_MODEL },
+    inCloudParams: { model: cloudModel() },
   });
   const image = await prepareImage(file);
   const response = await model.generateContent([

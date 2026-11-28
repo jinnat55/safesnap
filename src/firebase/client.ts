@@ -1,6 +1,7 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getAI, GoogleAIBackend, type AI } from 'firebase/ai';
+import { loadRemoteConfig } from './remote';
 
 const env = import.meta.env;
 
@@ -36,6 +37,7 @@ export function getAi(): AI {
     console.warn('App Check site key missing: Firebase AI Logic requests may be rejected.');
   }
   const ai = getAI(app, { backend: new GoogleAIBackend() });
+  void loadRemoteConfig(app);
   cached = { app, ai };
   return ai;
 }
